@@ -1,0 +1,3 @@
+# Basic Game Script
+
+*WIP*
