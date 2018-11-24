@@ -95,7 +95,7 @@
 | ^      | 0x38 | JL       | imm |     | $(cf < 0): pc \leftarrow memory[imm]$             |
 | ^      | 0x39 | JG       | imm |     | $(cf > 0): pc \leftarrow memory[imm]$             |
 | ^      | 0x3A | CALL     | imm |     | $ra \leftarrow pc, \ \ pc \leftarrow memory[imm]$ |
-| ^      | 0x2B | SYS      | imm  |     | system call                                       |
+| ^      | 0x2B | SYS      | imm |     | system call                                       |
 | SRX    | 0x23 | RET      | $s  |     | $pc \leftarrow s$ (jump to adress in $s$)         |
 
 ---
@@ -133,8 +133,9 @@
 | ^      | 0x1C | CMPF     | $s0 | $s1 | Floating point comparison                                       |
 | SRX    | 0x20 | PUSH     | $s  |     | Push value in $s$ to the stack                                  |
 | ^      | 0x21 | POP      | $d  |     | Pop value from the stack into $s$                               |
-| ^      | 0x22 | NOT      | $d  |     | $d \leftarrow not(d)$                                           |
+| ^      | 0x22 | HALT     | $s  |     | Stops execution and returns exit code in $s$                    |
 | ^      | 0x23 | RET      | $s  |     | $pc \leftarrow s$ (jump to adress in $s$)                       |
+| ^      | 0x24 | NOT      | $d  |     | $d \leftarrow not(d)$                                           |
 | IMM    | 0x28 | SLLI     | $d  | imm | $d \leftarrow d << imm$                                         |
 | ^      | 0x29 | SRLI     | $d  | imm | $d \leftarrow d >> imm$                                         |
 | ^      | 0x2A | SRLUI    | $d  | imm | unsigned shift right logical                                    |
