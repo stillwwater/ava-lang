@@ -15,7 +15,7 @@
 | SRX    | `oooooooo dddddddd`                                     |
 | LRX    | `oooooooo dddddddd ssssssss`                            |
 | IMM    | `oooooooo iiiiiiii iiiiiiii iiiiiiii iiiiiiii`          |
-| IMMX   | `oooooooo dddddddd iiiiiiii iiiiiiii iiiiiiii iiiiiiii` |
+| IMRX   | `oooooooo dddddddd iiiiiiii iiiiiiii iiiiiiii iiiiiiii` |
 
 ## Packed Encoding (Future Spec)
 Currently unavailable.
@@ -26,7 +26,7 @@ Currently unavailable.
 | LRX    | `ooooddss`                                      |
 | LRX-F  | `oooooooo ddddssss`                             |
 | IMM    | `oooooooo iiiiiiii iiiiiiii iiiiiiii iiiiiiii`  |
-| IMMX   | `oooooodd  iiiiiiii iiiiiiii iiiiiiii iiiiiiii` |
+| IMRX   | `oooooodd  iiiiiiii iiiiiiii iiiiiiii iiiiiiii` |
 
 ## LRX (Long Register Format)
 These instructions take 2 registers as operands and perform arithmetic/logical operations. With the exception of compare instructions, which only set cpu flags, these operations store their result in the first register operand.

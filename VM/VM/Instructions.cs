@@ -287,13 +287,13 @@ namespace VM
             }
         }
 
-        struct IMM
+        struct IMRX
         {
             internal const int SIZE = 6;
             internal byte dst;
             internal int constant;
 
-            IMM(Script vm) {
+            IMRX(Script vm) {
                 byte op0 = vm.memory[vm.cpu.inp + 1];
                 int op1  = vm.ReadWord(vm.cpu.inp + 2);
 
@@ -304,13 +304,13 @@ namespace VM
                     return;
                 }
 
-                vm.cpu.inp += IMM.SIZE;
+                vm.cpu.inp += IMRX.SIZE;
                 dst = op0;
                 constant = op1;
             }
 
             internal static bool LWA(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 uint address = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
                 uint value = (uint)vm.ReadWord(address);
                 vm.cpu.registers[Registers.EAX] = value;
@@ -318,14 +318,14 @@ namespace VM
             }
 
             internal static bool LBA(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 int address = (int)vm.cpu.registers[imm.dst] + imm.constant;
                 vm.cpu.registers[Registers.EAX] = vm.memory[address];
                 return false;
             }
 
             internal static bool SWA(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 uint value = vm.cpu.registers[Registers.EAX];
                 uint address = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
                 vm.WriteWord(value, address);
@@ -333,7 +333,7 @@ namespace VM
             }
 
             internal static bool SBA(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 uint value = vm.cpu.registers[Registers.EAX];
                 uint address = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
                 vm.WriteByte((byte)value, address);
@@ -341,31 +341,31 @@ namespace VM
             }
 
             internal static bool SLL(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 vm.cpu.registers[imm.dst] = vm.cpu.registers[imm.dst] << imm.constant;
                 return false;
             }
 
             internal static bool SRL(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 vm.cpu.registers[imm.dst] = (uint)((int)vm.cpu.registers[imm.dst] >> imm.constant);
                 return false;
             }
 
             internal static bool SRLU(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 vm.cpu.registers[imm.dst] = vm.cpu.registers[imm.dst] >> imm.constant;
                 return false;
             }
 
             internal static bool ADD(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 vm.cpu.registers[imm.dst] = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
                 return false;
             }
 
             internal static bool CMP(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 int a = (int)vm.cpu.registers[imm.dst];
                 int b = imm.constant;
 
@@ -376,7 +376,7 @@ namespace VM
             }
 
             internal static bool CMPU(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 uint a = vm.cpu.registers[imm.dst];
                 uint b = (uint)imm.constant;
 
@@ -387,18 +387,18 @@ namespace VM
             }
 
             internal static bool LEA(Script vm) {
-                var imm = new IMM(vm);
+                var imm = new IMRX(vm);
                 vm.cpu.registers[imm.dst] = (uint)imm.constant;
                 return false;
             }
         }
 
-        struct JA
+        struct IMM
         {
             internal const int SIZE = 5;
             internal uint address;
 
-            JA(Script vm, bool is_jump) {
+            IMM(Script vm, bool is_jump) {
                 uint op = (uint)vm.ReadWord(vm.cpu.inp + 1);
 
                 if (is_jump) {
@@ -409,92 +409,92 @@ namespace VM
                         return;
                     }
                 } else {
-                    vm.cpu.inp += JA.SIZE;
+                    vm.cpu.inp += IMM.SIZE;
                 }
 
                 address = op;
             }
 
             internal static bool JE(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_EQUAL) {
                     vm.cpu.inp = ja.address;
                     return false;
                 }
-                vm.cpu.inp += JA.SIZE;
+                vm.cpu.inp += IMM.SIZE;
                 return false;
             }
 
             internal static bool JNE(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
                 if (!vm.cpu.status.CMP_EQUAL) {
                     vm.cpu.inp = ja.address;
                     return false;
                 }
-                vm.cpu.inp += JA.SIZE;
+                vm.cpu.inp += IMM.SIZE;
                 return false;
             }
 
             internal static bool JL(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_BELOW) {
                     vm.cpu.inp = ja.address;
                     return false;
                 }
-                vm.cpu.inp += JA.SIZE;
+                vm.cpu.inp += IMM.SIZE;
                 return false;
             }
 
             internal static bool JLE(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_BELOW || vm.cpu.status.CMP_EQUAL) {
                     vm.cpu.inp = ja.address;
                     return false;
                 }
-                vm.cpu.inp += JA.SIZE;
+                vm.cpu.inp += IMM.SIZE;
                 return false;
             }
 
             internal static bool JG(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_ABOVE) {
                     vm.cpu.inp = ja.address;
                     return false;
                 }
-                vm.cpu.inp += JA.SIZE;
+                vm.cpu.inp += IMM.SIZE;
                 return false;
             }
 
             internal static bool JGE(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_ABOVE || vm.cpu.status.CMP_EQUAL) {
                     vm.cpu.inp = ja.address;
                     return false;
                 }
-                vm.cpu.inp += JA.SIZE;
+                vm.cpu.inp += IMM.SIZE;
                 return false;
             }
 
             internal static bool JMP(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
                 vm.cpu.inp = ja.address;
                 return false;
             }
 
             internal static bool CALL(Script vm) {
-                var ja = new JA(vm, is_jump: true);
+                var ja = new IMM(vm, is_jump: true);
 
                 vm.cpu.registers[Registers.ESP] -= sizeof(int);
                 uint stack_ptr = vm.cpu.registers[Registers.ESP];
 
                 // Push pointer to next instrcution
-                vm.WriteWord(vm.cpu.inp + JA.SIZE, stack_ptr);
+                vm.WriteWord(vm.cpu.inp + IMM.SIZE, stack_ptr);
                 vm.cpu.inp = ja.address; // Jump to address
                 return false;
             }
 
             internal static bool PUSH(Script vm) {
-                var ja = new JA(vm, is_jump: false);
+                var ja = new IMM(vm, is_jump: false);
                 // Stack grows down
                 vm.cpu.registers[Registers.ESP] -= sizeof(int);
                 uint stack_ptr = vm.cpu.registers[Registers.ESP];
@@ -509,7 +509,7 @@ namespace VM
             }
 
             internal static bool SYS(Script vm) {
-                var ja = new JA(vm, is_jump: false);
+                var ja = new IMM(vm, is_jump: false);
                 // Call extern procedure
                 SysCallbacks.ExecuteCallback(vm, ja.address);
                 return false;
@@ -559,17 +559,17 @@ namespace VM
             /* 0x22 */    null,
             /* 0x23 */    null,
 
-            /* 0x24 */    IMM.LWA,
-            /* 0x25 */    IMM.LBA,
-            /* 0x26 */    IMM.SWA,
-            /* 0x27 */    IMM.SBA,
-            /* 0x28 */    IMM.SLL,
-            /* 0x29 */    IMM.SRL,
-            /* 0x2A */    IMM.SRLU,
-            /* 0x2B */    IMM.ADD,
-            /* 0x2C */    IMM.CMP,
-            /* 0x2D */    IMM.CMPU,
-            /* 0x2E */    IMM.LEA,
+            /* 0x24 */    IMRX.LWA,
+            /* 0x25 */    IMRX.LBA,
+            /* 0x26 */    IMRX.SWA,
+            /* 0x27 */    IMRX.SBA,
+            /* 0x28 */    IMRX.SLL,
+            /* 0x29 */    IMRX.SRL,
+            /* 0x2A */    IMRX.SRLU,
+            /* 0x2B */    IMRX.ADD,
+            /* 0x2C */    IMRX.CMP,
+            /* 0x2D */    IMRX.CMPU,
+            /* 0x2E */    IMRX.LEA,
 
             /* 0x2F */    null,
             /* 0x30 */    null,
@@ -577,16 +577,16 @@ namespace VM
             /* 0x32 */    null,
             /* 0x33 */    null,
 
-            /* 0x34 */    JA.JE,
-            /* 0x35 */    JA.JNE,
-            /* 0x36 */    JA.JL,
-            /* 0x37 */    JA.JLE,
-            /* 0x38 */    JA.JG,
-            /* 0x39 */    JA.JGE,
-            /* 0x3A */    JA.JMP,
-            /* 0x3B */    JA.PUSH,
-            /* 0x3C */    JA.CALL,
-            /* 0x3D */    JA.SYS,
+            /* 0x34 */    IMM.JE,
+            /* 0x35 */    IMM.JNE,
+            /* 0x36 */    IMM.JL,
+            /* 0x37 */    IMM.JLE,
+            /* 0x38 */    IMM.JG,
+            /* 0x39 */    IMM.JGE,
+            /* 0x3A */    IMM.JMP,
+            /* 0x3B */    IMM.PUSH,
+            /* 0x3C */    IMM.CALL,
+            /* 0x3D */    IMM.SYS,
 
             /* 0x3E */    null,
             /* 0x3F */    null,
@@ -650,13 +650,13 @@ namespace VM
             if (opcode < 0x34) {
                 string dst = RegisterName(vm.memory[ip + 1]);
                 int imm = vm.ReadWord((uint)ip + 2);
-                size = IMM.SIZE;
+                size = IMRX.SIZE;
                 return string.Format("{3:X8}  {4:X2}  {0, -8}{1}, {2:X}", name, dst, imm, ip, opcode);
             }
 
             if (opcode < 0x40) {
                 int imm = vm.ReadWord((uint)ip + 1);
-                size = JA.SIZE;
+                size = IMM.SIZE;
                 return string.Format("{2:X8}  {3:X2}  {0, -8}{1:X}", name, imm, ip, opcode);
             }
 
