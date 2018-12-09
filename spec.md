@@ -1,152 +1,104 @@
 ## Registers
 
-| Address | Register | Description         |
-|---------|----------|---------------------|
-| 0x0     | a0       | Argument registers  |
-| 0x1     | a1       | ^                   |
-| 0x2     | a2       | ^                   |
-| 0x3     | a3       | ^                   |
-| 0x4     | a4       | ^                   |
-| 0x5     | a5       | ^                   |
-| 0x6     | a6       | ^                   |
-| 0x7     | a7       | ^                   |
-| 0x8     | ra       | Return address      |
-| 0x9     | rv       | Return value        |
-| 0xA     | ax       | Accumulator         |
-| 0xB     | ac       | Constant            |
-| 0xC     | cx       | Counter             |
-| 0xD     | t0       | Temporary registers |
-| 0xE     | t1       | ^                   |
-| 0xF     | t2       | ^                   |
+|   | Register | Description     |
+|---|----------|-----------------|
+| 0 | eax      | Accumulator     |
+| 1 | ecx      | Counter         |
+| 2 | edx      | Alt Accumulator |
+| 3 | esp      | Stack pointer   |
+| 4 | ebp      | Base pointer    |
 
-## Instruction Format
+## Instruction Encoding
 
-| Format | Size (bits) | 0  | 1               | 2   | 3   | 4 | 5   |
-|--------|-------------|----|-----------------|-----|-----|---|-----|
-| SRX    | 16          | OP | R0              | n/a |     |   |     |
-| LRX    | 24          | OP | R0              | R1  | n/a |   |     |
-| J      | 40          | OP | ADDRESS         |     |     |   | n/a |
-| IMM    | 48          | OP | IMMEDIATE VALUE |     |     |   |     |
+| Format | Encoding                                                |
+|--------|---------------------------------------------------------|
+| SRX    | `oooooooo dddddddd`                                     |
+| LRX    | `oooooooo dddddddd ssssssss`                            |
+| IMM    | `oooooooo iiiiiiii iiiiiiii iiiiiiii iiiiiiii`          |
+| IMMX   | `oooooooo dddddddd iiiiiiii iiiiiiii iiiiiiii iiiiiiii` |
 
+## Packed Encoding (Future Spec)
+Currently unavailable.
 
-## Arithmentic Instructions
+| Format | Encoding                                        |
+|--------|-------------------------------------------------|
+| SRX    | `oooooodd`                                      |
+| LRX    | `ooooddss`                                      |
+| LRX-F  | `oooooooo ddddssss`                             |
+| IMM    | `oooooooo iiiiiiii iiiiiiii iiiiiiii iiiiiiii`  |
+| IMMX   | `oooooodd  iiiiiiii iiiiiiii iiiiiiii iiiiiiii` |
 
-| Format | Hex  | Mmemonic | op1 | op2 | Operation                                                         |
-|--------|------|----------|-----|-----|-------------------------------------------------------------------|
-| LRX    | 0x00 | SLL      | $d  | $s  | $d \leftarrow d << s$                                             |
-| ^      | 0x01 | SRL      | $d  | $s  | $d \leftarrow d >> s$                                             |
-| ^      | 0x02 | SRLU     | $d  | $s  | Unsigned shift right logical                                      |
-| ^      | 0x03 | MUL      | $d  | $s  | $d \leftarrow d * s$                                              |
-| ^      | 0x04 | DIV      | $d  | $s  | $d \leftarrow d / s$                                              |
-| ^      | 0x05 | DIVU     | $d  | $s  | Unsigned division                                                 |
-| ^      | 0x06 | MOD      | $d  | $s  | $d \leftarrow d $ mod $s$                                         |
-| ^      | 0x07 | MODU     | $d  | $s  | $d \leftarrow d $ mod $s$                                         |
-| ^      | 0x08 | ADD      | $d  | $s  | $d \leftarrow d + s$                                              |
-| ^      | 0x09 | SUB      | $d  | $s  | $d \leftarrow d - s$                                              |
-| LRX-F  | 0x16 | CVTFW    | $d  | $s  | $d \leftarrow word(s_f)$                                        |
-| ^      | 0x17 | CVTWF    | $d  | $s  | $d_f \leftarrow float(s)$                                       |
-| ^      | 0x18 | MULF     | $d  | $s  | $d_f \leftarrow d_f * s_f$                                        |
-| ^      | 0x19 | DIVF     | $d  | $s  | $d_f \leftarrow d_f / s_f$                                        |
-| ^      | 0x1A | ADDF     | $d  | $s  | $d_f \leftarrow d_f + s_f$                                        |
-| ^      | 0x1B | SUBF     | $d  | $s  | $d_f \leftarrow d_f - s_f$                                        |
-| IMM    | 0x28 | SLLI     | $d  | imm | $d \leftarrow d << imm$                                           |
-| ^      | 0x29 | SRLI     | $d  | imm | $d \leftarrow d >> imm$                                           |
-| ^      | 0x2A | SRLUI    | $d  | imm | unsigned shift right logical                                      |
-| ^      | 0x2B | ADDI     | $d  | imm | $d \leftarrow d + imm$                                            |
+## LRX (Long Register Format)
+These instructions take 2 registers as operands and perform arithmetic/logical operations. With the exception of compare instructions, which only set cpu flags, these operations store their result in the first register operand.
 
+| Opcode | Mmemonic | op0 | op1 | Operation                                                       |
+|--------|----------|-----|-----|-----------------------------------------------------------------|
+| 00     | SLL      | dst | src | `dst <- dst << src`                                             |
+| 01     | SRL      | dst | src | `dst <- dst >> src`                                             |
+| 02     | SRLU     | dst | src | `dst <- unsigned(dst) >> src`                                   |
+| 03     | MUL      | dst | src | `dst <- dst * src`                                              |
+| 04     | DIV      | dst | src | `dst <- dst / src`                                              |
+| 05     | DIVU     | dst | src | `dst <- unsigned(dst) / unsigned(src)`                          |
+| 06     | MOD      | dst | src | `dst <- dst % src`                                              |
+| 07     | MODU     | dst | src | `dst <- unsigned(dst) % unsigned(src)`                          |
+| 08     | ADD      | dst | src | `dst <- dst + src`                                              |
+| 09     | SUB      | dst | src | `dst <- dst - src`                                              |
+| 0A     | MOV      | dst | src | `dst <- src`                                                    |
+| 0B     | CMP      | lhs | rhs | `cf <- (lhs < rhs): BELOW, (lhs > rhx): ABOVE, (lhs = rhs): EQ` |
+| 0C     | CMPU     | lhs | rhs | `cf <- unsigned comparison`                                     |
+| 0D     | AND      | dst | src | `dst <- dst & src`                                              |
+| 0E     | OR       | dst | src | `dst <- dst | src`                                              |
+| 0F     | XOR      | dst | src | `dst <- dst ^ src`                                              |
+| 12     | MULF     | dst | src | `dst <- float(dst) * float(src)`                                |
+| 13     | DIVF     | dst | src | `dst <- float(dst) / float(src)`                                |
+| 14     | ADDF     | dst | src | `dst <- float(dst) + float(src)`                                |
+| 15     | SUBF     | dst | src | `dst <- float(dst) - float(src)`                                |
+| 16     | CMPF     | lhs | rhs | `cf <- floating-point comparison`                               |
 
-## Logical & Comparison Instructions
+## SRX (Short Register Format)
+These instructions take a single register as an operand.
 
-| Format | Hex  | Mmemonic | op1 | op2 | Operation                                                       |
-|--------|------|----------|-----|-----|-----------------------------------------------------------------|
-| LRX    | 0x0B | CMP      | $s0 | $s1 | $cf \leftarrow (s_0 < s_1): -1, (s_0 > s_1): 1, (s_0 = s_1): 0$ |
-| ^      | 0x0C | CMPU     | $s0 | $s1 | Unsigned comparison                                             |
-| ^      | 0x0D | AND      | $d  | $s  | $d \leftarrow d$ & $s$                                          |
-| ^      | 0x0E | OR       | $d  | $s  | $d \leftarrow d$ \| $s$                                         |
-| ^      | 0x0F | XOR      | $d  | $s  | $d \leftarrow d$ ^ $ s$                                         |
-| LRX-F  | 0x1C | CMPF     | $s0 | $s1 | Floating point comparison                                       |
-| SRX    | 0x22 | NOT      | $d  |     | $d \leftarrow not(d)$                                           |
-| IMM    | 0x23 | CMPI     | $d  | imm | compare immediate value                                         |
-| ^      | 0x2D | CMPUI    | $d  | imm | compare immediate value                                         |
+| Opcode | Mmemonic | op0 | op1 | Operation                            |
+|--------|----------|-----|-----|--------------------------------------|
+| 17     | CVTFW    | dst |     | `dst <- word(dst)`                   |
+| 18     | CVTWF    | dst |     | `dst <- float(dst)`                  |
+| 1A     | PUSH     | src |     | `esp <- esp - 4; memory[esp] <- src` |
+| 1B     | POP      | dst |     | `dst <- memory[esp]; esp <- esp + 4` |
+| 1C     | NOT      | dst |     | `dst <- ~dst`                        |
+| 1D     | RET      | src |     | `ip <- src`                          |
+| 1E     | HALT     | src |     | `exit_code <- src; stop execution`   |
 
+## IMRX (Immediate-Register Format)
+These instructions take a register as the first operand, and a 32-bit immediate value as the second.
+Note that for load instructions the value read from memory is returned in the `eax` register, and store instructions write the value from the `eax` register to memory.
 
+| Opcode | Mmemonic | op0 | op1 | Operation                         |
+|--------|----------|-----|-----|-----------------------------------|
+| 24     | LDW      | src | imm | `eax <- memory[src + imm] (word)` |
+| 25     | LDB      | src | imm | `eax <- memory[src + imm] (byte)` |
+| 26     | STW      | src | imm | `memory[src + imm] <- eax (word)` |
+| 27     | STB      | src | imm | `memory[src + imm] <- eax (byte)` |
+| 28     | SLL      | dst | imm | `dst <- dst << imm`               |
+| 29     | SRL      | dst | imm | `dst <- dst >> imm`               |
+| 2A     | SRLU     | dst | imm | `dst <- unsigned(dst) >> imm`     |
+| 2B     | ADD      | dst | imm | `dst <- dst + imm`                |
+| 2C     | CMP      | lhs | imm | `cf <- compare(lhs, imm)`         |
+| 2D     | CMPU     | lhs | imm | `cf <- unsigned comparison`       |
+| 2E     | LEA      | dst | imm | `dst <- imm`                      |
 
-## Store / Load Instructions
+## IMM (Immediate Format)
 
-| Format | Hex  | Mmemonic | op1 | op2 | Operation                         |
-|--------|------|----------|-----|-----|-----------------------------------|
-| LRX    | 0x0A | MOV      | $d  | $s  | $d \leftarrow s$                  |
-| ^      | 0x10 | LW       | $d  | $s  | $d_W \leftarrow memory[s]$ (word) |
-| ^      | 0x11 | LB       | $d  | $s  | $d_B \leftarrow memory[s]$ (byte) |
-| ^      | 0x12 | SW       | $d  | $s  | $memory[s] \leftarrow d_W$ (word) |
-| ^      | 0x13 | SB       | $d  | $s  | $memory[s] \leftarrow d_B$ (byte) |
-| SRX    | 0x20 | PUSH     | $s  |     | Push value in $s$ to the stack    |
-| ^      | 0x21 | POP      | $d  |     | Pop value from the stack into $s$ |
-| IMM    | 0x2E | LEA      | $d  | imm | $d \leftarrow imm$                |
+These instructions take a 32-bit immediate value as the only operand. These include most of the branching instructions. Note that the call instruction pushes a pointer to the next instruction before branching to the address. The system call instruction writes the return value from the system call to the eax register.
 
-
-## Branch instructions
-
-| Format | Hex  | Mmemonic | op1 | op2 | Operation                                         |
-|--------|------|----------|-----|-----|---------------------------------------------------|
-| J      | 0x35 | JMP      | imm |     | $pc \leftarrow memory[imm]$                       |
-| ^      | 0x36 | JE       | imm |     | $(cf = 0): pc \leftarrow memory[imm]$             |
-| ^      | 0x37 | JNE      | imm |     | $(cf \neq 0): pc \leftarrow memory[imm]$          |
-| ^      | 0x38 | JL       | imm |     | $(cf < 0): pc \leftarrow memory[imm]$             |
-| ^      | 0x39 | JG       | imm |     | $(cf > 0): pc \leftarrow memory[imm]$             |
-| ^      | 0x3A | CALL     | imm |     | $ra \leftarrow pc, \ \ pc \leftarrow memory[imm]$ |
-| ^      | 0x2B | SYS      | imm |     | system call                                       |
-| SRX    | 0x23 | RET      | $s  |     | $pc \leftarrow s$ (jump to adress in $s$)         |
-
----
-
-## Instruction Reference
-
-| Format | Hex  | Mmemonic | op1 | op2 | Operation                                                       |
-|--------|------|----------|-----|-----|-----------------------------------------------------------------|
-| LRX    | 0x00 | SLL      | $d  | $s  | $d \leftarrow d << s$                                           |
-| ^      | 0x01 | SRL      | $d  | $s  | $d \leftarrow d >> s$                                           |
-| ^      | 0x02 | SRLU     | $d  | $s  | Unsigned shift right logical                                    |
-| ^      | 0x03 | MUL      | $d  | $s  | $d \leftarrow d * s$                                            |
-| ^      | 0x04 | DIV      | $d  | $s  | $d \leftarrow d / s$                                            |
-| ^      | 0x05 | DIVU     | $d  | $s  | Unsigned division                                               |
-| ^      | 0x06 | MOD      | $d  | $s  | $d \leftarrow d $ mod $s$                                       |
-| ^      | 0x07 | MODU     | $d  | $s  | $d \leftarrow d $ mod $s$                                       |
-| ^      | 0x08 | ADD      | $d  | $s  | $d \leftarrow d + s$                                            |
-| ^      | 0x09 | SUB      | $d  | $s  | $d \leftarrow d - s$                                            |
-| ^      | 0x0A | MOV      | $d  | $s  | $d \leftarrow s$                                                |
-| ^      | 0x0B | CMP      | $s0 | $s1 | $cf \leftarrow (s_0 < s_1): -1, (s_0 > s_1): 1, (s_0 = s_1): 0$ |
-| ^      | 0x0C | CMPU     | $s0 | $s1 | Unsigned comparison                                             |
-| ^      | 0x0D | AND      | $d  | $s  | $d \leftarrow d$ & $s$                                          |
-| ^      | 0x0E | OR       | $d  | $s  | $d \leftarrow d$ \| $s$                                         |
-| ^      | 0x0F | XOR      | $d  | $s  | $d \leftarrow d$ ^ $ s$                                         |
-| ^      | 0x10 | LW       | $d  | $s  | $d_W \leftarrow memory[s]$ (word)                               |
-| ^      | 0x11 | LB       | $d  | $s  | $d_B \leftarrow memory[s]$ (byte)                               |
-| ^      | 0x12 | SW       | $d  | $s  | $memory[s] \leftarrow d_W$ (word)                               |
-| ^      | 0x13 | SB       | $d  | $s  | $memory[s] \leftarrow d_B$ (byte)                               |
-| LRX-F  | 0x16 | CVTFW    | $d  | $s  | $d \leftarrow word(s_f)$                                        |
-| ^      | 0x17 | CVTWF    | $d  | $s  | $d_f \leftarrow float(s)$                                       |
-| ^      | 0x18 | MULF     | $d  | $s  | $d_f \leftarrow d_f * s_f$                                      |
-| ^      | 0x19 | DIVF     | $d  | $s  | $d_f \leftarrow d_f / s_f$                                      |
-| ^      | 0x1A | ADDF     | $d  | $s  | $d_f \leftarrow d_f + s_f$                                      |
-| ^      | 0x1B | SUBF     | $d  | $s  | $d_f \leftarrow d_f - s_f$                                      |
-| ^      | 0x1C | CMPF     | $s0 | $s1 | Floating point comparison                                       |
-| SRX    | 0x20 | PUSH     | $s  |     | Push value in $s$ to the stack                                  |
-| ^      | 0x21 | POP      | $d  |     | Pop value from the stack into $s$                               |
-| ^      | 0x22 | HALT     | $s  |     | Stops execution and returns exit code in $s$                    |
-| ^      | 0x23 | RET      | $s  |     | $pc \leftarrow s$ (jump to adress in $s$)                       |
-| ^      | 0x24 | NOT      | $d  |     | $d \leftarrow not(d)$                                           |
-| IMM    | 0x28 | SLLI     | $d  | imm | $d \leftarrow d << imm$                                         |
-| ^      | 0x29 | SRLI     | $d  | imm | $d \leftarrow d >> imm$                                         |
-| ^      | 0x2A | SRLUI    | $d  | imm | unsigned shift right logical                                    |
-| ^      | 0x2B | ADDI     | $d  | imm | $d \leftarrow d + imm$                                          |
-| ^      | 0x2C | CMPI     | $d  | imm | compare immediate value                                         |
-| ^      | 0x2D | CMPUI    | $d  | imm | compare immediate value                                         |
-| ^      | 0x2E | LEA      | $d  | imm | $d \leftarrow imm$                                              |
-| J      | 0x35 | JMP      | imm |     | $pc \leftarrow memory[imm]$                                     |
-| ^      | 0x36 | JE       | imm |     | $(cf = 0): pc \leftarrow memory[imm]$                           |
-| ^      | 0x37 | JNE      | imm |     | $(cf \neq 0): pc \leftarrow memory[imm]$                        |
-| ^      | 0x38 | JL       | imm |     | $(cf < 0): pc \leftarrow memory[imm]$                           |
-| ^      | 0x39 | JG       | imm |     | $(cf > 0): pc \leftarrow memory[imm]$                           |
-| ^      | 0x3A | CALL     | imm |     | $ra \leftarrow pc, \ \ pc \leftarrow memory[imm]$               |
-| ^      | 0x3B | SYS      | imm |     | system call                                                     |
+| Opcode | Mmemonic | op0     | op1 | Operation                                |
+|--------|----------|---------|-----|------------------------------------------|
+| 34     | JE       | address |     | `(cf = EQ): ip <- address`               |
+| 35     | JNE      | address |     | `(cf <> EQ): ip <- address`              |
+| 36     | JL       | address |     | `(cf = BELOW): ip <- address`            |
+| 37     | JLE      | address |     | `(cf = BELOW || cf = EQ): ip <- address` |
+| 38     | JG       | address |     | `(cf = ABOVE): ip <- address`            |
+| 39     | JGE      | address |     | `(cf = ABOVE || cf = EQ): ip <- address` |
+| 3A     | JMP      | address |     | `ip <- address`                          |
+| 3B     | PUSH     | imm     |     | `esp <- esp - 4; memory[esp] <- imm`     |
+| 3C     | CALL     | address |     | `push(ip + sizeof(IMM)); ip <- imm`      |
+| 3D     | SYS      | imm     |     | `eax <- System.Execute(imm)`             |
