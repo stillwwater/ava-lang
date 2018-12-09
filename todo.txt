@@ -1,0 +1,20 @@
+Assembler Spec
+==============
+
++ [OK] Byte-code header section
+    - 0xff: signature (assembler version)
+    - 0xffff: initial_stack_size
+    - 0xffff: initial_heap_size
+    - 0xffffffff: dat_ptr
+
++ [OK] Push IMM instruction
++ [OK] JLE, JGE instructions
++ Register opcode packing
+
+
+Assembler
+=========
+
++ [OK] Floating point support
++ [OK] Declare memory space in .dat
++ [OK] BUG: signed byte

@@ -1,3 +1,9 @@
-/bgsc/
 /trials/
+/**/bin/
+/**/obj/
+/**/.vs/
+*.s
+*.o
+*.c
+oft.asm
 doc.md
