@@ -67,6 +67,7 @@ These instructions take a single register as an operand.
 | 1C     | NOT      | dst |     | `dst <- ~dst`                        |
 | 1D     | RET      | src |     | `ip <- src`                          |
 | 1E     | HALT     | src |     | `exit_code <- src; stop execution`   |
+| 1F     | FREE     | src |     | `heap->free(address: src)`           |
 
 ## IMRX (Immediate-Register Format)
 These instructions take a register as the first operand, and a 32-bit immediate value as the second.
@@ -85,6 +86,7 @@ Note that for load instructions the value read from memory is returned in the `e
 | 2C     | CMP      | lhs | imm | `cf <- compare(lhs, imm)`         |
 | 2D     | CMPU     | lhs | imm | `cf <- unsigned comparison`       |
 | 2E     | LEA      | dst | imm | `dst <- imm`                      |
+| 2F     | HEAP     | dst | imm | `dst <- heap->alloc(size: imm)`   |
 
 ## IMM (Immediate Format)
 

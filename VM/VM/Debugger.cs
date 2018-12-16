@@ -115,7 +115,7 @@ namespace VM
         }
 
         void Draw(Script vm, double time) {
-            int ip = (int)vm.cpu.inp;
+            int ip = (int)vm.cpu.ip;
 
             int x = 0;
             int y = tokens[ip].position;

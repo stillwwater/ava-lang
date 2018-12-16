@@ -7,9 +7,11 @@ namespace VM
     {
         internal bool running;
         internal uint[] registers;
-        internal uint inp; // Instruction Pointer
+        internal uint ip; // Instruction Pointer
         internal uint dat; // Pointer to bottom of data section
-        internal uint stk; // Pointer to top of stack section
+        internal uint heap; // data/heap
+        internal uint hp; // heap pointer
+        //internal uint stk; // Pointer to top of stack section
         internal Status status;
 
         internal struct Status
@@ -85,19 +87,19 @@ namespace VM
                 registers = new uint[Registers.NUM_REGISTERS],
                 status    = new Cpu.Status(),
                 // ip starts out pointing to the beginning of text section
-                inp       = Header.SIZE
+                ip        = Header.SIZE
             };
 
             // Stack pointer starts at the top of memory
-            cpu.registers[Registers.ESP] = MAX_MEMORY;
+            cpu.registers[Registers.ESP] = MAX_MEMORY + 1;
 
             int stack_heap = ReadWord(Header.SIZE_SECTION);
 
             header = new Header() {
                 sign_magic         = ReadByte(Header.SIGN_SECTION),
                 sign_version       = ReadByte(Header.SIGN_SECTION + 1),
-                initial_stack_size = (short)stack_heap,
-                initial_heap_size  = 0,
+                initial_stack_size = 16,//(short)stack_heap,
+                initial_heap_size  = 8, // @Temporary
                 dat_ptr            = ReadWord(Header.DAT_PTR_SECTION)
             };
 
@@ -106,8 +108,10 @@ namespace VM
             // Stack currently empty, stk points to the lowest possible
             // address for the stack pointer, which is the end of the
             // data section.
-            cpu.stk = (uint)memory.Length;
-            cpu.dat = (uint)header.dat_ptr;
+            //cpu.stk  = (uint)memory.Length;
+            cpu.heap = (uint)memory.Length;
+            cpu.dat  = (uint)header.dat_ptr;
+            cpu.hp   = (uint)(cpu.heap + header.initial_heap_size);
 
             int mem_size = memory.Length
                          + header.initial_stack_size
@@ -126,7 +130,7 @@ namespace VM
         public void Run() {
             cpu.running = true;
 
-            while (cpu.running && cpu.inp < cpu.dat) {
+            while (cpu.running && cpu.ip < cpu.dat) {
                 Advance();
             }
         }
@@ -136,7 +140,7 @@ namespace VM
         // the instruction pointer.
         //
         internal void Advance() {
-            byte opcode = memory[cpu.inp];
+            byte opcode = memory[cpu.ip];
             bool error = Instructions.Execute(opcode, this);
 
             if (error || cpu.status.error != 0) {
@@ -172,10 +176,10 @@ namespace VM
         public void Reset() {
             cpu.registers = new uint[Registers.NUM_REGISTERS];
             cpu.status    = new Cpu.Status();
-            cpu.inp       = Header.SIZE;
+            cpu.ip       = Header.SIZE;
 
 
-            int mem_size = (int)cpu.stk
+            int mem_size = (int)cpu.heap
                          + header.initial_stack_size
                          + header.initial_heap_size;
 
@@ -184,10 +188,8 @@ namespace VM
         }
 
         public void WriteWord(uint value, uint virtual_address) {
+            StackAlloc(); // Ensure there is enough memory
             uint address = ConvertToRealAddress(virtual_address);
-
-            // Ensure there is enough memory
-            StackAlloc(sizeof(int));
 
              if (SegFault(address, sizeof(int))) {
                 Halt(-1, virtual_address);
@@ -201,9 +203,8 @@ namespace VM
         }
 
         public void WriteByte(byte value, uint virtual_address) {
+            StackAlloc();
             uint address = ConvertToRealAddress(virtual_address);
-
-            StackAlloc(sizeof(byte));
 
             if (SegFault(address, sizeof(byte))) {
                 Halt(-1, virtual_address);
@@ -277,9 +278,9 @@ namespace VM
             // The stack grows down from higher addresses, we can map virtual stack
             // addresses to memory locations by subtracting the virtual_address
             // offset from the total memory capacity.
-            int real_address = (int)((memory.Length - 1) - (MAX_MEMORY - virtual_address));
+            int real_address = (int)((memory.Length) - (MAX_MEMORY - virtual_address));
 
-            if (real_address < cpu.stk) {
+            if (real_address < cpu.hp) {
                 // The address does not point to the stack, so the virtual_address
                 // is equivalent to the real_address.
                 return virtual_address;
@@ -288,24 +289,26 @@ namespace VM
             return (uint)real_address;
         }
 
-        internal void StackAlloc(int size) {
+        internal void StackAlloc() {
             // Use esp to determine if the stack is full
             uint esp = cpu.registers[Registers.ESP];
-            uint address = ConvertToRealAddress(esp) - sizeof(int);
+            uint address = ConvertToRealAddress(esp);// - sizeof(int);
 
-            if (address > cpu.stk) {
+            if (address > cpu.hp) {
+                // @Todo: address > cpu.hp
                 // We already have enough memory
                 return;
             }
 
             // Double the stack size
-            int stack_size   = memory.Length - (int)cpu.stk;
-            int section_size = (int)(memory.Length - cpu.stk + address) * 2;
+            int stack_size   = memory.Length - (int)cpu.hp;
+            // @XXX: size/address??
+            //int section_size = (int)(memory.Length - cpu.hp + address) * 2;
 
-            Array.Resize(ref memory, section_size);
+            Array.Resize(ref memory, memory.Length + stack_size);
 
             // Move current stack to allocated stack section
-            Array.Copy(memory, cpu.stk, memory, section_size - stack_size, stack_size);
+            Array.Copy(memory, cpu.hp, memory, cpu.hp + stack_size, stack_size);
         }
     }
 }

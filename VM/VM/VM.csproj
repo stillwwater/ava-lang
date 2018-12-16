@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Debugger.cs" />
+    <Compile Include="Heap.cs" />
     <Compile Include="Instructions.cs" />
     <Compile Include="SysCallbacks.cs" />
     <Compile Include="Program.cs" />

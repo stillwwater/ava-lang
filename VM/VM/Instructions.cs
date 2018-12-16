@@ -11,8 +11,8 @@ namespace VM
             internal byte src;
 
             LRX(Script vm) {
-                byte op0 = vm.memory[vm.cpu.inp + 1];
-                byte op1 = vm.memory[vm.cpu.inp + 2];
+                byte op0 = vm.memory[vm.cpu.ip + 1];
+                byte op1 = vm.memory[vm.cpu.ip + 2];
 
                 if (op0 > Registers.NUM_REGISTERS || op1 > Registers.NUM_REGISTERS) {
                     vm.cpu.status.error = Cpu.Error.BAD_REGISTER;
@@ -21,7 +21,7 @@ namespace VM
                     return;
                 }
 
-                vm.cpu.inp += LRX.SIZE;
+                vm.cpu.ip += LRX.SIZE;
                 dst = op0;
                 src = op1;
             }
@@ -188,7 +188,7 @@ namespace VM
             internal byte dst;
 
             SRX(Script vm, bool is_jump) {
-                byte op = vm.memory[vm.cpu.inp + 1];
+                byte op = vm.memory[vm.cpu.ip + 1];
 
                 if (op > Registers.NUM_REGISTERS) {
                     vm.cpu.status.error = Cpu.Error.BAD_REGISTER;
@@ -206,7 +206,7 @@ namespace VM
                         return;
                     }
                 } else {
-                    vm.cpu.inp += SRX.SIZE;
+                    vm.cpu.ip += SRX.SIZE;
                 }
 
                 dst = op;
@@ -267,7 +267,7 @@ namespace VM
                 var srx = new SRX(vm, is_jump: true);
                 uint address = vm.cpu.registers[srx.dst];
 
-                vm.cpu.inp = address; // Jump to address
+                vm.cpu.ip = address; // Jump to address
                 return false;
             }
 
@@ -285,6 +285,11 @@ namespace VM
                 vm.cpu.registers[srx.dst] = ~word;
                 return false;
             }
+
+            internal static bool FREE(Script vm) {
+                var srx = new SRX(vm, is_jump: false);
+                return Heap.Free(vm, srx.dst);
+            }
         }
 
         struct IMRX
@@ -294,8 +299,8 @@ namespace VM
             internal int constant;
 
             IMRX(Script vm) {
-                byte op0 = vm.memory[vm.cpu.inp + 1];
-                int op1  = vm.ReadWord(vm.cpu.inp + 2);
+                byte op0 = vm.memory[vm.cpu.ip + 1];
+                int op1  = vm.ReadWord(vm.cpu.ip + 2);
 
                 if (op0 > Registers.NUM_REGISTERS) {
                     vm.cpu.status.error = Cpu.Error.BAD_REGISTER;
@@ -304,7 +309,7 @@ namespace VM
                     return;
                 }
 
-                vm.cpu.inp += IMRX.SIZE;
+                vm.cpu.ip += IMRX.SIZE;
                 dst = op0;
                 constant = op1;
             }
@@ -391,6 +396,12 @@ namespace VM
                 vm.cpu.registers[imm.dst] = (uint)imm.constant;
                 return false;
             }
+
+            internal static bool HEAP(Script vm) {
+                var imm = new IMRX(vm);
+                vm.cpu.registers[imm.dst] = Heap.Alloc(vm, (uint)imm.constant);
+                return false;
+            }
         }
 
         struct IMM
@@ -399,7 +410,7 @@ namespace VM
             internal uint address;
 
             IMM(Script vm, bool is_jump) {
-                uint op = (uint)vm.ReadWord(vm.cpu.inp + 1);
+                uint op = (uint)vm.ReadWord(vm.cpu.ip + 1);
 
                 if (is_jump) {
                     // Verify the address is executable
@@ -409,7 +420,7 @@ namespace VM
                         return;
                     }
                 } else {
-                    vm.cpu.inp += IMM.SIZE;
+                    vm.cpu.ip += IMM.SIZE;
                 }
 
                 address = op;
@@ -418,66 +429,66 @@ namespace VM
             internal static bool JE(Script vm) {
                 var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_EQUAL) {
-                    vm.cpu.inp = ja.address;
+                    vm.cpu.ip = ja.address;
                     return false;
                 }
-                vm.cpu.inp += IMM.SIZE;
+                vm.cpu.ip += IMM.SIZE;
                 return false;
             }
 
             internal static bool JNE(Script vm) {
                 var ja = new IMM(vm, is_jump: true);
                 if (!vm.cpu.status.CMP_EQUAL) {
-                    vm.cpu.inp = ja.address;
+                    vm.cpu.ip = ja.address;
                     return false;
                 }
-                vm.cpu.inp += IMM.SIZE;
+                vm.cpu.ip += IMM.SIZE;
                 return false;
             }
 
             internal static bool JL(Script vm) {
                 var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_BELOW) {
-                    vm.cpu.inp = ja.address;
+                    vm.cpu.ip = ja.address;
                     return false;
                 }
-                vm.cpu.inp += IMM.SIZE;
+                vm.cpu.ip += IMM.SIZE;
                 return false;
             }
 
             internal static bool JLE(Script vm) {
                 var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_BELOW || vm.cpu.status.CMP_EQUAL) {
-                    vm.cpu.inp = ja.address;
+                    vm.cpu.ip = ja.address;
                     return false;
                 }
-                vm.cpu.inp += IMM.SIZE;
+                vm.cpu.ip += IMM.SIZE;
                 return false;
             }
 
             internal static bool JG(Script vm) {
                 var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_ABOVE) {
-                    vm.cpu.inp = ja.address;
+                    vm.cpu.ip = ja.address;
                     return false;
                 }
-                vm.cpu.inp += IMM.SIZE;
+                vm.cpu.ip += IMM.SIZE;
                 return false;
             }
 
             internal static bool JGE(Script vm) {
                 var ja = new IMM(vm, is_jump: true);
                 if (vm.cpu.status.CMP_ABOVE || vm.cpu.status.CMP_EQUAL) {
-                    vm.cpu.inp = ja.address;
+                    vm.cpu.ip = ja.address;
                     return false;
                 }
-                vm.cpu.inp += IMM.SIZE;
+                vm.cpu.ip += IMM.SIZE;
                 return false;
             }
 
             internal static bool JMP(Script vm) {
                 var ja = new IMM(vm, is_jump: true);
-                vm.cpu.inp = ja.address;
+                vm.cpu.ip = ja.address;
                 return false;
             }
 
@@ -488,8 +499,8 @@ namespace VM
                 uint stack_ptr = vm.cpu.registers[Registers.ESP];
 
                 // Push pointer to next instrcution
-                vm.WriteWord(vm.cpu.inp + IMM.SIZE, stack_ptr);
-                vm.cpu.inp = ja.address; // Jump to address
+                vm.WriteWord(vm.cpu.ip + IMM.SIZE, stack_ptr);
+                vm.cpu.ip = ja.address; // Jump to address
                 return false;
             }
 
@@ -552,8 +563,8 @@ namespace VM
             /* 0x1C */    SRX.NOT,
             /* 0x1D */    SRX.RET,
             /* 0x1E */    SRX.HALT,
+            /* 0x1F */    SRX.FREE,
 
-            /* 0x1F */    null,
             /* 0x20 */    null,
             /* 0x21 */    null,
             /* 0x22 */    null,
@@ -570,8 +581,8 @@ namespace VM
             /* 0x2C */    IMRX.CMP,
             /* 0x2D */    IMRX.CMPU,
             /* 0x2E */    IMRX.LEA,
+            /* 0x2F */    IMRX.HEAP,
 
-            /* 0x2F */    null,
             /* 0x30 */    null,
             /* 0x31 */    null,
             /* 0x32 */    null,
@@ -632,7 +643,7 @@ namespace VM
 
         internal static string Disassemble(Script vm, int ip, out int size) {
             byte opcode = vm.memory[ip];
-            string name = instruction_table[opcode].Method.Name;
+            string name = instruction_table[opcode].Method.Name.ToLower();
 
             if (opcode < 0x17) {
                 string dst_s = RegisterName(vm.memory[ip + 1]);

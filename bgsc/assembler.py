@@ -57,6 +57,7 @@ INSTRUCTION_MAP = {
     'S_NOT':   0x1C,
     'S_RET':   0x1D,
     'S_HALT':  0x1E,
+    'S_FREE':  0x1F,
 
     # IMM
     'I_LDW':   0x24,
@@ -70,6 +71,7 @@ INSTRUCTION_MAP = {
     'I_CMP':   0x2C,
     'I_CMPU':  0x2D,
     'I_LEA':   0x2E,
+    'I_HEAP':  0x2F,
 
     # JA
     'J_JE':    0x34,
