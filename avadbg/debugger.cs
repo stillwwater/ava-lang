@@ -1,9 +1,10 @@
+﻿using Ava;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
+using System.Threading.Tasks;
 
-namespace VM
+namespace AvaDebug
 {
     public class Debugger
     {
@@ -65,7 +66,7 @@ namespace VM
                         break;
                     }
                 } else {
-                    Thread.Sleep(delay);
+                    Task.Delay(delay).Wait();
                 }
             }
 
@@ -78,7 +79,7 @@ namespace VM
             tokens = new Token[vm.memory.Length];
 
             // 3 lines taken up by header
-            token_lookup = new List<int>() {0, 0, 0};
+            token_lookup = new List<int>() { 0, 0, 0 };
 
             Console.CursorVisible = false;
             Console.Clear();
@@ -86,7 +87,7 @@ namespace VM
             int ip = Header.SIZE;
 
             for (int i = 3; ; i++) {
-                string src = Instructions.Disassemble(vm, ip, out int size);
+                string src = Ava.Debug.Disassemble(vm, ip, out int size);
 
                 tokens[ip] = new Token() {
                     value = src,
@@ -133,7 +134,7 @@ namespace VM
                 uint value = vm.cpu.registers[i];
                 int cip = token_lookup[top_y + i];
                 Console.SetCursorPosition(x, top_y + i);
-                Console.WriteLine("    {0, -50}| {1}: {2:X}", tokens[cip], Instructions.RegisterName((byte)i), value);
+                Console.WriteLine("    {0, -50}| {1}: {2:X}", tokens[cip], Ava.Debug.RegisterName((byte)i), value);
                 last_draw[i + 1] = cip;
             }
 

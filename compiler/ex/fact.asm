@@ -1,26 +1,27 @@
 
 .data
-	test:	word 4
-	arr:	word 1, 2, 3, 4
+@msg:	byte	"Factorial of? "
+@msg1:	byte	"Factorial(10) = %d"
 .text
         lea     ecx, 10
         call    fact
-	sys	1
+	push 	eax
+	push	@msg1
+	sys	printf
 
 	jmp	.halt
 
 fact:
-	push	ebp
 	push	edx
 
 	; Base case
 	lea	eax, 1
-	cmpi	ecx, 0
+	cmp	ecx, 0
 	je	.done
 
 	; fact(n-1)
 	mov	edx, ecx
-	addi	ecx, -1
+	add	ecx, -1
 	call	fact
 
 	mul	eax, edx

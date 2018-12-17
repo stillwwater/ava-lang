@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
+using Ava;
 
-namespace VM
+namespace AvaDebug
 {
     class Program
     {
@@ -11,7 +12,7 @@ namespace VM
             var vm = new Script(byte_code);
 
             Script.IO.Write = Debugger.Write;
-            Script.IO.Read  = Debugger.Read;
+            Script.IO.Read = Debugger.Read;
 
             ConsoleKeyInfo response;
 

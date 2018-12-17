@@ -52,6 +52,7 @@ INSTRUCTION_MAP = {
     # SRX
     'S_CVTFW': 0x17,
     'S_CVTWF': 0x18,
+    'S_HEAP':  0x19,
     'S_PUSH':  0x1A,
     'S_POP':   0x1B,
     'S_NOT':   0x1C,
@@ -71,7 +72,6 @@ INSTRUCTION_MAP = {
     'I_CMP':   0x2C,
     'I_CMPU':  0x2D,
     'I_LEA':   0x2E,
-    'I_HEAP':  0x2F,
 
     # JA
     'J_JE':    0x34,
@@ -193,8 +193,6 @@ class Value:
         return imm.to_bytes(
             self.size, byteorder=ENDIAN, signed=(self.size != SIZE[BYTE]))
 
-        # TODO: Floating point
-
     def __repr__(self):
         if self.size == 4:
             type = WORD
@@ -261,8 +259,9 @@ def parse_data(tok: list, context) -> list:
     if data_type == 'space':
         size = int(value)
         # First Word in an array indicates its size
-        array = [Value(context, size, SIZE[WORD], label)]
-        return array + [Value(context, '0', size)]
+        array = [Value(context, size, SIZE[WORD])]
+        context.labels[label] = context.ip
+        return array + [Value(context, '0', size, label)]
 
     data_size = SIZE[data_type]
 
@@ -272,7 +271,11 @@ def parse_data(tok: list, context) -> list:
 
         # First Word in an array indicates its size,
         # this is the array's base address.
-        array = [Value(context, len(elements) * data_size, SIZE[WORD], label)]
+        array = [Value(context, len(elements) * data_size, SIZE[WORD])]
+        # Address first word
+        context.labels[label] = context.ip
+        array += [Value(context, elements[0], data_size, label)]
+        elements.pop(0)
         array += [Value(context, e, data_size) for e in elements]
 
         return array
@@ -437,6 +440,7 @@ def run(filename: str, output: str = 'out.bgx', debug=False):
             print_ast(tokens)
             print('-- end of parser output --\n')
             print(context.debug_info)
+            print(context.labels)
             print('instruction count:', context.instruction_count())
 
     program_size = 0

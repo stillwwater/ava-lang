@@ -56,12 +56,13 @@ These instructions take 2 registers as operands and perform arithmetic/logical o
 | 16     | CMPF     | lhs | rhs | `cf <- floating-point comparison`                               |
 
 ## SRX (Short Register Format)
-These instructions take a single register as an operand.
+These instructions take a single register as an operand. Note that the `heap` instruction returns the address of the allocated memory to the `eax` register.
 
 | Opcode | Mmemonic | op0 | op1 | Operation                            |
 |--------|----------|-----|-----|--------------------------------------|
 | 17     | CVTFW    | dst |     | `dst <- word(dst)`                   |
 | 18     | CVTWF    | dst |     | `dst <- float(dst)`                  |
+| 19     | HEAP     | src |     | `eax <- heap->alloc(size: src)`      |
 | 1A     | PUSH     | src |     | `esp <- esp - 4; memory[esp] <- src` |
 | 1B     | POP      | dst |     | `dst <- memory[esp]; esp <- esp + 4` |
 | 1C     | NOT      | dst |     | `dst <- ~dst`                        |
@@ -86,7 +87,6 @@ Note that for load instructions the value read from memory is returned in the `e
 | 2C     | CMP      | lhs | imm | `cf <- compare(lhs, imm)`         |
 | 2D     | CMPU     | lhs | imm | `cf <- unsigned comparison`       |
 | 2E     | LEA      | dst | imm | `dst <- imm`                      |
-| 2F     | HEAP     | dst | imm | `dst <- heap->alloc(size: imm)`   |
 
 ## IMM (Immediate Format)
 
