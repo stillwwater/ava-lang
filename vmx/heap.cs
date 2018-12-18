@@ -4,6 +4,15 @@ namespace Ava
 {
     internal class Heap
     {
+        //
+        // Arena Header format:
+        // byte 0-4: arena state
+        // byte 4-8: arena size
+        //
+        // Each arena is at most 2GB in size with
+        // the arena address pointing to the first byte
+        // folloring the arena header. (offset + sizeof(dword))
+        //
         struct Arena
         {
             internal uint size;
@@ -85,28 +94,15 @@ namespace Ava
             vm.cpu.hp += (uint)size_increase;
         }
 
-        //
-        // Header format:
-        // byte 0: arena state
-        // byte 1-4: arena size (24 bit value)
-        //
-        // Each arena is at most 16MB in size with
-        // the arena address pointing to the first byte
-        // folloring the arena. (offset + sizeof(word))
-        //
         static Arena ReadHeader(Script vm, uint address) {
             var arena  = new Arena();
             arena.size = (uint)vm.ReadWord(address - 4);
             arena.state = (Arena.State)vm.ReadWord(address - 8);
 
-            //arena.size   = data & 0x00FFFFFF;
-            //arena.state = (Arena.State)((data & 0xFF000000) >> 24);
-
             return arena;
         }
 
         static void WriteHeader(Script vm, uint address, ref Arena arena) {
-            //uint data = arena.size | (uint)arena.state << 24;
             vm.WriteWord(arena.size, address - 4);
             vm.WriteWord((uint)arena.state, address - 8);
         }

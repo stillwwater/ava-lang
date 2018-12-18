@@ -84,7 +84,7 @@ namespace Ava
             get { return memory.Length; }
         }
 
-        internal const int MAX_MEMORY = 1024;
+        internal const int MAX_MEMORY = 0xFFFFFFF;
         internal Header header;
         internal Cpu cpu;
         internal byte[] memory;
@@ -415,7 +415,7 @@ namespace Ava
         internal void StackAlloc() {
             // Use esp to determine if the stack is full
             uint esp = cpu.registers[Registers.ESP];
-            uint address = ConvertToRealAddress(esp);// - sizeof(int);
+            uint address = ConvertToRealAddress(esp);
 
             if (address > cpu.hp) {
                 // @Todo: address > cpu.hp
@@ -425,11 +425,8 @@ namespace Ava
 
             // Double the stack size
             int stack_size   = memory.Length - (int)cpu.hp;
-            // @XXX: size/address??
-            //int section_size = (int)(memory.Length - cpu.hp + address) * 2;
 
             Array.Resize(ref memory, memory.Length + stack_size);
-
             // Move current stack to allocated stack section
             Array.Copy(memory, (int)cpu.hp, memory, (int)cpu.hp + stack_size, stack_size);
         }
