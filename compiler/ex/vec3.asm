@@ -3,7 +3,6 @@
 @fmt:	byte	"(%f, %f, %f)"
 .text
 	lea	edx, @vec3
-
 	push	2		; push arguments in reverse order
 	push	edx
 
@@ -34,10 +33,10 @@ vec3_mul:
 
 	add	esp, -4		; make room for local variable
 	ldw	ebp, 8		; eax <- first argument (address of @vec3)
-	ldw	eax, 0		; eax <- @vec3[0] (size)
+	ldw	eax, -4		; eax <- @vec3[0] (size)
 	stw	ebp, -4		; store local var (sizeof @vec3)
 
-	lea	ecx, 4		; loop counter @vec[1]
+	lea	ecx, 0		; loop counter @vec[1]
 _loop:
 	ldw	ebp, 8		; address of @vec3
 	add	eax, ecx
@@ -59,7 +58,7 @@ _loop:
 
 	ldw	ebp, -4
 	cmp	ecx, eax	; ecx <= sizeof @vec3
-	jle	_loop
+	jl	_loop
 
 	mov	esp, ebp
 	pop	ebp		; Restore caller's ebp
