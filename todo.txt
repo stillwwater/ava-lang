@@ -1,5 +1,34 @@
+Compiler
+========
+
+Crucial
++ Variables, operators, types
++ Functions, if, while (+ nested functions)
++ Static arrays/strings
++ Arrays/strings (heap variables)
++ Structs
++ Casting
++ Auto deallocate memory
++ Implicit struct constructors
++ For loops
++ Packed strings
++ switch
++ Type alias
+
+Extra
++ out parameters
++ ref parameters (&)
++ named parameters
++ Any type
++ Function as types (function references)
+
+
 Assembler Spec
 ==============
+
++ Cells instead of bytes
++ Public function table (exports)
++ Extern function table (imports)
 
 + [OK] Byte-code header section
     - 0xff: signature (assembler version)
@@ -10,7 +39,6 @@ Assembler Spec
 + [OK] Push IMM instruction
 + [OK] JLE, JGE instructions
 + Register opcode packing
-
 
 Assembler
 =========
