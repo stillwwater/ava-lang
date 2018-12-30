@@ -1,0 +1,30 @@
+"C#":
+  type: programming
+  color: "#2350ef"
+  extensions:
+    - .cs
+
+Python:
+  type: programming
+  color: "#93702f"
+  extensions:
+    - .py
+
+"F#":
+  type: programming
+  color: "#b056af"
+  extensions:
+    - .fs
+    - .fsi
+
+Assembly:
+  type: programming
+  color: "#777777"
+  extensions:
+    - .asm
+
+Ava:
+  type: programming
+  color: "#ef53e0"
+  extensions:
+    - .ava

@@ -2,11 +2,14 @@ Compiler
 ========
 
 Crucial
-+ Variables, operators, types
-+ Functions, if, while (+ nested functions)
-+ Static arrays/strings
-+ Arrays/strings (heap variables)
++ [Parser OK] Variables, constants, operators, types
++ [Parser OK] Functions, if, while
++ Else if
++ Nested functions
++ [Parser OK] Static arrays/strings
++ [Parser OK] Arrays/strings (heap variables)
 + Structs
++ Implicit types (x := 1)
 + Casting
 + Auto deallocate memory
 + Implicit struct constructors
@@ -14,14 +17,29 @@ Crucial
 + Packed strings
 + switch
 + Type alias
++ Enums
++ Using/imports/exports
 
 Extra
++ Serialize static variables with serialize header section
 + out parameters
 + ref parameters (&)
 + named parameters
 + Any type
 + Function as types (function references)
 
+Parser
+======
+
++ FIX: Comments only work when there's no empty lines
++ [OK] FIX: Registering quotes in strings
++ [OK] Print ast
++ handling of empty lines
++ Error messages
++ Identifiers with numbers
++ [OK] If statements need to have separate handling of compound statements
++ do and then should be allowed to be on the next line
++ [OK] Declarations -> statements
 
 Assembler Spec
 ==============

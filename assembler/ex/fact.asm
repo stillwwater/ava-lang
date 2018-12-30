@@ -1,9 +1,8 @@
-
 .data
 @msg:	byte	"Factorial of? "
 @msg1:	byte	"Factorial(6) = %d"
 .text
-        lea     ecx, 6
+        lea     ecx, 1000
         call    fact
 	push 	eax
 	push	@msg1

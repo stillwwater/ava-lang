@@ -1,0 +1,36 @@
+
+-- Test script
+-- This code is useless and possibly semantically incorrect
+
+constant :: 3.14159
+value: int
+array := [] of int
+array := [12] of int
+
+main :: (args: [] int) -> int do
+    print(args[0])
+    x: int
+    x = x * 2 + 1
+    x = 2 + -args[x]
+
+    if (x == 0) and (args[x] >= 2) then
+        do
+            y : int = 4; -- y undefined outside of block
+            print(y + x)
+        end
+        print(x)
+    else
+        print(x)
+    end
+
+    v : str = "hello
+    world"
+
+    while x < 10 do
+        print("Hello world!")
+        x = x + 1
+        break
+    end
+
+    return 0
+end
