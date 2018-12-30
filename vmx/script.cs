@@ -13,7 +13,6 @@ namespace Ava
         internal uint dat; // Pointer to bottom of data section
         internal uint heap; // data/heap
         internal uint hp; // heap pointer
-        //internal uint stk; // Pointer to top of stack section
         internal Status status;
 
         internal struct Status

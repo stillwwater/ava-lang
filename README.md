@@ -1,3 +1,3 @@
-# Basic Game Script
+# Ava
 
 *WIP*
