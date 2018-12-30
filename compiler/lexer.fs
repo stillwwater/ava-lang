@@ -1,4 +1,4 @@
-# 1 "lexer.fsl"
+# 1 "lexer.l"
  
 module Lexer
 
@@ -297,287 +297,287 @@ and comment  (lexbuf : Microsoft.FSharp.Text.Lexing.LexBuffer<_>) = _fslex_comme
 and _fslex_tokenstream  _fslex_state lexbuf =
   match _fslex_tables.Interpret(_fslex_state,lexbuf) with
   | 0 -> ( 
-# 24 "lexer.fsl"
+# 24 "lexer.l"
                                    tokenstream lexbuf 
 # 302 "lexer.fs"
           )
   | 1 -> ( 
-# 25 "lexer.fsl"
+# 25 "lexer.l"
                                    comment lexbuf 
 # 307 "lexer.fs"
           )
   | 2 -> ( 
-# 26 "lexer.fsl"
+# 26 "lexer.l"
                                    EOL 
 # 312 "lexer.fs"
           )
   | 3 -> ( 
-# 28 "lexer.fsl"
+# 28 "lexer.l"
                                                  FLOAT_LITERAL(float32(lexeme lexbuf)) 
 # 317 "lexer.fs"
           )
   | 4 -> ( 
-# 29 "lexer.fsl"
+# 29 "lexer.l"
                                                  INT_LITERAL(int(lexeme lexbuf)) 
 # 322 "lexer.fs"
           )
   | 5 -> ( 
-# 33 "lexer.fsl"
+# 33 "lexer.l"
                      TEXT_LITERAL(let s = lexeme lexbuf in s.Substring(2, s.Length - 3)) 
 # 327 "lexer.fs"
           )
   | 6 -> ( 
-# 35 "lexer.fsl"
+# 35 "lexer.l"
                      STRING_LITERAL(let s = lexeme lexbuf in s.Substring(1, s.Length - 2)) 
 # 332 "lexer.fs"
           )
   | 7 -> ( 
-# 37 "lexer.fsl"
+# 37 "lexer.l"
                                                  CHAR_LITERAL(lexbuf.LexemeChar 2) 
 # 337 "lexer.fs"
           )
   | 8 -> ( 
-# 39 "lexer.fsl"
+# 39 "lexer.l"
                                   KW_VOID 
 # 342 "lexer.fs"
           )
   | 9 -> ( 
-# 40 "lexer.fsl"
+# 40 "lexer.l"
                                   KW_INT 
 # 347 "lexer.fs"
           )
   | 10 -> ( 
-# 41 "lexer.fsl"
+# 41 "lexer.l"
                                   KW_FLOAT 
 # 352 "lexer.fs"
           )
   | 11 -> ( 
-# 42 "lexer.fsl"
+# 42 "lexer.l"
                                   KW_BYTE 
 # 357 "lexer.fs"
           )
   | 12 -> ( 
-# 43 "lexer.fsl"
+# 43 "lexer.l"
                                   KW_CHAR 
 # 362 "lexer.fs"
           )
   | 13 -> ( 
-# 44 "lexer.fsl"
+# 44 "lexer.l"
                                   KW_STRING 
 # 367 "lexer.fs"
           )
   | 14 -> ( 
-# 45 "lexer.fsl"
+# 45 "lexer.l"
                                   KW_TEXT
 # 372 "lexer.fs"
           )
   | 15 -> ( 
-# 46 "lexer.fsl"
+# 46 "lexer.l"
                                   KW_OR 
 # 377 "lexer.fs"
           )
   | 16 -> ( 
-# 47 "lexer.fsl"
+# 47 "lexer.l"
                                   KW_AND 
 # 382 "lexer.fs"
           )
   | 17 -> ( 
-# 48 "lexer.fsl"
+# 48 "lexer.l"
                                   KW_NOT 
 # 387 "lexer.fs"
           )
   | 18 -> ( 
-# 49 "lexer.fsl"
+# 49 "lexer.l"
                                   KW_IF 
 # 392 "lexer.fs"
           )
   | 19 -> ( 
-# 50 "lexer.fsl"
+# 50 "lexer.l"
                                   KW_ELSE 
 # 397 "lexer.fs"
           )
   | 20 -> ( 
-# 51 "lexer.fsl"
+# 51 "lexer.l"
                                   KW_WHILE 
 # 402 "lexer.fs"
           )
   | 21 -> ( 
-# 52 "lexer.fsl"
+# 52 "lexer.l"
                                   KW_THEN 
 # 407 "lexer.fs"
           )
   | 22 -> ( 
-# 53 "lexer.fsl"
+# 53 "lexer.l"
                                   KW_DO 
 # 412 "lexer.fs"
           )
   | 23 -> ( 
-# 54 "lexer.fsl"
+# 54 "lexer.l"
                                   KW_END 
 # 417 "lexer.fs"
           )
   | 24 -> ( 
-# 55 "lexer.fsl"
+# 55 "lexer.l"
                                   KW_OF 
 # 422 "lexer.fs"
           )
   | 25 -> ( 
-# 56 "lexer.fsl"
+# 56 "lexer.l"
                                   KW_IS 
 # 427 "lexer.fs"
           )
   | 26 -> ( 
-# 57 "lexer.fsl"
+# 57 "lexer.l"
                                   KW_RETURN 
 # 432 "lexer.fs"
           )
   | 27 -> ( 
-# 58 "lexer.fsl"
+# 58 "lexer.l"
                                   KW_BREAK 
 # 437 "lexer.fs"
           )
   | 28 -> ( 
-# 59 "lexer.fsl"
+# 59 "lexer.l"
                                   KW_CONTINUE 
 # 442 "lexer.fs"
           )
   | 29 -> ( 
-# 60 "lexer.fsl"
+# 60 "lexer.l"
                                   KW_EXPORT 
 # 447 "lexer.fs"
           )
   | 30 -> ( 
-# 62 "lexer.fsl"
+# 62 "lexer.l"
                                   KW_COUNT 
 # 452 "lexer.fs"
           )
   | 31 -> ( 
-# 63 "lexer.fsl"
+# 63 "lexer.l"
                                       IDENT(lexeme lexbuf) 
 # 457 "lexer.fs"
           )
   | 32 -> ( 
-# 65 "lexer.fsl"
+# 65 "lexer.l"
                                   COMMA 
 # 462 "lexer.fs"
           )
   | 33 -> ( 
-# 66 "lexer.fsl"
+# 66 "lexer.l"
                                   EOL 
 # 467 "lexer.fs"
           )
   | 34 -> ( 
-# 67 "lexer.fsl"
+# 67 "lexer.l"
                                   COLON 
 # 472 "lexer.fs"
           )
   | 35 -> ( 
-# 68 "lexer.fsl"
+# 68 "lexer.l"
                                   DOT 
 # 477 "lexer.fs"
           )
   | 36 -> ( 
-# 69 "lexer.fsl"
+# 69 "lexer.l"
                                   SINGLE_EQUALS 
 # 482 "lexer.fs"
           )
   | 37 -> ( 
-# 70 "lexer.fsl"
+# 70 "lexer.l"
                                   DOUBLE_COLON 
 # 487 "lexer.fs"
           )
   | 38 -> ( 
-# 71 "lexer.fsl"
+# 71 "lexer.l"
                                   COLON_EQUALS 
 # 492 "lexer.fs"
           )
   | 39 -> ( 
-# 72 "lexer.fsl"
+# 72 "lexer.l"
                                   RARROW 
 # 497 "lexer.fs"
           )
   | 40 -> ( 
-# 73 "lexer.fsl"
+# 73 "lexer.l"
                                   PLUS 
 # 502 "lexer.fs"
           )
   | 41 -> ( 
-# 74 "lexer.fsl"
+# 74 "lexer.l"
                                   MINUS 
 # 507 "lexer.fs"
           )
   | 42 -> ( 
-# 75 "lexer.fsl"
+# 75 "lexer.l"
                                   ASTERISK 
 # 512 "lexer.fs"
           )
   | 43 -> ( 
-# 76 "lexer.fsl"
+# 76 "lexer.l"
                                   FSLASH 
 # 517 "lexer.fs"
           )
   | 44 -> ( 
-# 77 "lexer.fsl"
+# 77 "lexer.l"
                                   PERCENT 
 # 522 "lexer.fs"
           )
   | 45 -> ( 
-# 78 "lexer.fsl"
+# 78 "lexer.l"
                                   DOUBLE_EQUALS 
 # 527 "lexer.fs"
           )
   | 46 -> ( 
-# 79 "lexer.fsl"
+# 79 "lexer.l"
                                   LESS_GREATER 
 # 532 "lexer.fs"
           )
   | 47 -> ( 
-# 80 "lexer.fsl"
+# 80 "lexer.l"
                                   LESS_EQUALS 
 # 537 "lexer.fs"
           )
   | 48 -> ( 
-# 81 "lexer.fsl"
+# 81 "lexer.l"
                                   LESS 
 # 542 "lexer.fs"
           )
   | 49 -> ( 
-# 82 "lexer.fsl"
+# 82 "lexer.l"
                                   GREATER_EQUALS 
 # 547 "lexer.fs"
           )
   | 50 -> ( 
-# 83 "lexer.fsl"
+# 83 "lexer.l"
                                   GREATER 
 # 552 "lexer.fs"
           )
   | 51 -> ( 
-# 84 "lexer.fsl"
+# 84 "lexer.l"
                                   AMP 
 # 557 "lexer.fs"
           )
   | 52 -> ( 
-# 85 "lexer.fsl"
+# 85 "lexer.l"
                                   LPAREN 
 # 562 "lexer.fs"
           )
   | 53 -> ( 
-# 86 "lexer.fsl"
+# 86 "lexer.l"
                                   RPAREN 
 # 567 "lexer.fs"
           )
   | 54 -> ( 
-# 87 "lexer.fsl"
+# 87 "lexer.l"
                                   LBRACKET 
 # 572 "lexer.fs"
           )
   | 55 -> ( 
-# 88 "lexer.fsl"
+# 88 "lexer.l"
                                   RBRACKET 
 # 577 "lexer.fs"
           )
   | 56 -> ( 
-# 89 "lexer.fsl"
+# 89 "lexer.l"
                                   EOF 
 # 582 "lexer.fs"
           )
@@ -586,12 +586,12 @@ and _fslex_tokenstream  _fslex_state lexbuf =
 and _fslex_comment  _fslex_state lexbuf =
   match _fslex_tables.Interpret(_fslex_state,lexbuf) with
   | 0 -> ( 
-# 94 "lexer.fsl"
-                                       tokenstream lexbuf 
+# 94 "lexer.l"
+                                       tokenstream lexbuf |> ignore; EOL 
 # 591 "lexer.fs"
           )
   | 1 -> ( 
-# 95 "lexer.fsl"
+# 95 "lexer.l"
                                        comment lexbuf 
 # 596 "lexer.fs"
           )

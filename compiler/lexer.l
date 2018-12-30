@@ -90,7 +90,6 @@ rule tokenstream =
 
 and comment =
     parse
-    // @Todo inline comments
-    | newline         { tokenstream lexbuf }                  // End comment section
+    | newline         { tokenstream lexbuf |> ignore; EOL } // Keep EOL as it may be required by the parser
     | _               { comment lexbuf }                // Skip comment chars
 

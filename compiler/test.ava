@@ -7,7 +7,7 @@ value: int
 array := [] of int
 array := [12] of int
 
-main :: (args: [] int) -> int do
+main :: (args: [] int, num: int) -> int do
     print(args[0])
     x: int
     x = x * 2 + 1
@@ -15,7 +15,7 @@ main :: (args: [] int) -> int do
 
     if (x == 0) and (args[x] >= 2) then
         do
-            y : int = 4; -- y undefined outside of block
+            y : int = 4 -- y undefined outside of block
             print(y + x)
         end
         print(x)
