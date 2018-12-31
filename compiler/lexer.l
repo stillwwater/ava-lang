@@ -5,6 +5,9 @@ open Microsoft.FSharp.Text.Lexing
 open Ast
 open Parser
 open System
+open System.Text
+
+let str_buffer = new StringBuilder()
 
 let newline (lexbuf: LexBuffer<_>) =
     // Update newline position informations
@@ -29,12 +32,11 @@ rule tokenstream =
     | ['-']?digit+              { INT_LITERAL(int(lexeme lexbuf)) }
     //| digit+['b']               { BYTE_LITERAL(byte(lexeme lexbuf)) }
     // @Todo hex
-    | ['p']['"'][^'"']*['"']
-    { TEXT_LITERAL(let s = lexeme lexbuf in s.Substring(2, s.Length - 3)) }
-    | ['"'][^'"']*['"']
-    { STRING_LITERAL(let s = lexeme lexbuf in s.Substring(1, s.Length - 2)) }
+    | '"' {
+        str_buffer.Clear() |> ignore
+        read_str false lexbuf
+    }
     // Todo single quotes
-    | ['c']['"'][^'"']*['"']    { CHAR_LITERAL(lexbuf.LexemeChar 2) }
     // Keywords
     | "void"     { KW_VOID }
     | "int"      { KW_INT }
@@ -86,6 +88,7 @@ rule tokenstream =
     | ")"        { RPAREN }
     | "["        { LBRACKET }
     | "]"        { RBRACKET }
+    | "#"        { HASH }
     | eof        { EOF }
 
 and comment =
@@ -93,3 +96,19 @@ and comment =
     | newline         { tokenstream lexbuf |> ignore; EOL } // Keep EOL as it may be required by the parser
     | _               { comment lexbuf }                // Skip comment chars
 
+and read_str ignorequote =
+    parse
+    | '"' {
+        if ignorequote then
+            str_buffer.Append("\"") |> ignore
+            read_str false lexbuf
+        else
+            // End of string
+            STRING_LITERAL(str_buffer.ToString())
+    }
+    | '\\'    { read_str true lexbuf }
+    | [^ '"' '\\']+ {
+        str_buffer.Append(lexeme lexbuf) |> ignore
+        read_str false lexbuf
+    }
+    // @Todo: raise error at EOF
