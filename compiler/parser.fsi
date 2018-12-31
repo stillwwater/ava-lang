@@ -41,6 +41,7 @@ type token =
   | COLON_EQUALS
   | DOUBLE_COLON
   | SINGLE_EQUALS
+  | HASH
   | DOT
   | COLON
   | SEMI_COLON
@@ -54,10 +55,8 @@ type token =
   | KW_FLOAT
   | IDENT of (string)
   | BYTE_LITERAL of (byte)
-  | TEXT_LITERAL of (string)
   | STRING_LITERAL of (string)
   | FLOAT_LITERAL of (float32)
-  | CHAR_LITERAL of (char)
   | INT_LITERAL of (int)
 type tokenId = 
     | TOKEN_Empty
@@ -100,6 +99,7 @@ type tokenId =
     | TOKEN_COLON_EQUALS
     | TOKEN_DOUBLE_COLON
     | TOKEN_SINGLE_EQUALS
+    | TOKEN_HASH
     | TOKEN_DOT
     | TOKEN_COLON
     | TOKEN_SEMI_COLON
@@ -113,10 +113,8 @@ type tokenId =
     | TOKEN_KW_FLOAT
     | TOKEN_IDENT
     | TOKEN_BYTE_LITERAL
-    | TOKEN_TEXT_LITERAL
     | TOKEN_STRING_LITERAL
     | TOKEN_FLOAT_LITERAL
-    | TOKEN_CHAR_LITERAL
     | TOKEN_INT_LITERAL
     | TOKEN_end_of_input
     | TOKEN_error
@@ -143,8 +141,21 @@ type nonTerminalId =
     | NONTERM_break_stmt
     | NONTERM_continue_stmt
     | NONTERM_return_stmt
+    | NONTERM_expr_list
+    | NONTERM_aggregate
     | NONTERM_expr
-    | NONTERM_unary_expr
+    | NONTERM_logical
+    | NONTERM_relation
+    | NONTERM_relational
+    | NONTERM_equation
+    | NONTERM_unary
+    | NONTERM_combinatory
+    | NONTERM_term
+    | NONTERM_sequential
+    | NONTERM_factor
+    | NONTERM_primary
+    | NONTERM_qualified
+    | NONTERM_paren_primary
     | NONTERM_arguments
     | NONTERM_literal
 /// This function maps tokens to integer indexes

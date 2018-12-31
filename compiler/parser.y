@@ -8,10 +8,8 @@ open Ast
 // Terminal Tokens
 
 %token <int> INT_LITERAL
-%token <char> CHAR_LITERAL
 %token <float32> FLOAT_LITERAL
 %token <string> STRING_LITERAL
-%token <string> TEXT_LITERAL
 %token <byte> BYTE_LITERAL
 %token <string> IDENT
 
@@ -27,6 +25,7 @@ open Ast
 %token SEMI_COLON
 %token COLON
 %token DOT
+%token HASH
 
 %token SINGLE_EQUALS
 %token DOUBLE_COLON
@@ -95,7 +94,6 @@ open Ast
 %type <unit> break_stmt
 %type <unit> continue_stmt
 %type <Expression> expr
-%type <Expression> unary_expr
 %type <Arguments> arguments
 %type <Literal> literal
 
@@ -103,13 +101,9 @@ open Ast
 
 %nonassoc SINGLE_EQUALS DOUBLE_COLON COLON_EQUALS
 %left KW_OR KW_AND
-%left DOUBLE_EQUALS LESS_GREATER KW_IS
-%left LESS_EQUALS LESS GREATER_EQUALS GREATER
-%left KW_NOT //@XXX: redefined in unary_operator (is not(x)) vs (not(x))
-%left KW_ELSE
+%left DOUBLE_EQUALS LESS_GREATER KW_IS LESS_EQUALS LESS GREATER_EQUALS GREATER
 %left PLUS MINUS
 %left ASTERISK FSLASH PERCENT
-%right unary_expr IDENT
 
 %%
 
@@ -125,7 +119,7 @@ decl_list: decl_list decl     { $1 @ [$2] }
 decl: variable_decl           { Ast.VariableDecl $1 }
     | constant_decl           { Ast.ConstantDecl $1 }
     | procedure_decl          { Ast.ProcedureDecl $1 }
-    | EOL                     { Ast.DeclNop }
+    | EOL                     { Ast.DeclNop } // @Temporary: Causes reduce/reduce conflicts
 
 type_spec: KW_VOID   { Ast.Void }
     | KW_INT    { Ast.Int }
@@ -198,7 +192,6 @@ stmt: decl               { Ast.Declaration $1 }
     | continue_stmt      { Ast.ContinueStatement }
 
 sexpr: expr EOL            { Ast.Expression $1 }
-    | EOL                 { Ast.Nop }
 
 while_stmt: KW_WHILE expr stmt      { ($2, $3) }
 
@@ -226,38 +219,56 @@ continue_stmt: KW_CONTINUE EOL { }
 return_stmt: KW_RETURN expr EOL       { Some($2) }
     | KW_RETURN EOL       { None }
 
-expr: IDENT SINGLE_EQUALS expr
+expr: relation { $1 }
+    | expr logical relation { Ast.BinaryExpression($1, $2, $3) }
+    | IDENT SINGLE_EQUALS expr
     { Ast.ScalarAssignExpression({ Identifier = $1 }, $3) }
     // a[expr] = expr
     | IDENT LBRACKET expr RBRACKET SINGLE_EQUALS expr
     { Ast.ArrayAssignExpression({ Identifier = $1 }, $3, $6) }
-    // Binary logical expressions
-    | expr DOUBLE_EQUALS expr    { Ast.BinaryExpression($1, Ast.Eq, $3) }
-    | expr KW_IS expr            { Ast.BinaryExpression($1, Ast.Eq, $3) }
-    | expr LESS_GREATER expr     { Ast.BinaryExpression($1, Ast.NotEq, $3) }
-    | expr LESS_EQUALS expr      { Ast.BinaryExpression($1, Ast.LtEq, $3) }
-    | expr LESS expr             { Ast.BinaryExpression($1, Ast.Lt, $3) }
-    | expr GREATER_EQUALS expr   { Ast.BinaryExpression($1, Ast.GtEq, $3) }
-    | expr GREATER expr          { Ast.BinaryExpression($1, Ast.Gt, $3) }
-    | expr KW_AND expr           { Ast.BinaryExpression($1, Ast.CondAnd, $3) }
-    | expr KW_OR expr            { Ast.BinaryExpression($1, Ast.CondOr, $3) }
-    // Binary arithmetic expressions
-    | expr PLUS expr             { Ast.BinaryExpression($1, Ast.Add, $3) }
-    | expr MINUS expr            { Ast.BinaryExpression($1, Ast.Sub, $3) }
-    | expr ASTERISK expr         { Ast.BinaryExpression($1, Ast.Mul, $3) }
-    | expr FSLASH expr           { Ast.BinaryExpression($1, Ast.Div, $3) }
-    | expr PERCENT expr          { Ast.BinaryExpression($1, Ast.Mod, $3) }
-    // Unary expressions
-    | unary_expr        { $1 }
-    // (expr)
-    | LPAREN expr RPAREN         { $2 }
-    // Identifier value
-    | IDENT
-    { Ast.IdentifierExpression({ Identifier = $1 }) }
-    | IDENT LBRACKET expr RBRACKET
+
+
+logical: KW_AND { Ast.CondAnd }
+    | KW_OR     { Ast.CondOr }
+    // @Todo: XOR
+
+relation: equation { $1 }
+    // Disallow cases like (x < 2 < 3)
+    | equation relational equation { Ast.BinaryExpression($1, $2, $3) }
+
+relational: DOUBLE_EQUALS { Ast.Eq }
+    | LESS_EQUALS         { Ast.LtEq }
+    | LESS                { Ast.Lt }
+    | GREATER_EQUALS      { Ast.GtEq }
+    | GREATER             { Ast.Gt }
+
+equation: term { $1 }
+    | equation combinatory term { Ast.BinaryExpression($1, $2, $3) }
+
+unary: PLUS { Ast.Identity }
+    | MINUS { Ast.Negate }
+
+combinatory: PLUS { Ast.Add }
+    | MINUS       { Ast.Sub }
+
+term: factor { $1 }
+    | term sequential factor { Ast.BinaryExpression($1, $2, $3) }
+
+sequential: ASTERISK { Ast.Mul }
+    | FSLASH         { Ast.Div }
+    | PERCENT        { Ast.Mod }
+
+factor: primary  { $1 }
+    | KW_NOT primary  { Ast.UnaryExpression(Ast.LogicalNot, $2)}
+    | unary primary { Ast.UnaryExpression($1, $2) }
+
+primary: literal { Ast.LiteralExpression $1 }
+    | IDENT      { Ast.IdentifierExpression({ Identifier = $1 }) }
+    | qualified  { $1 }
+    | paren_primary { $1 }
+
+qualified: IDENT LBRACKET expr RBRACKET
     { Ast.ArrayIdentifierExpression({ Identifier = $1 }, $3) }
-    // Procedure calls and native procedures
-    // proc(args)
     | IDENT LPAREN arguments RPAREN
     { Ast.ProcedureCallExpression({ Identifier = $1 }, $3)}
     // proc()
@@ -265,13 +276,10 @@ expr: IDENT SINGLE_EQUALS expr
     { Ast.ProcedureCallExpression({ Identifier = $1 }, [])}
     | IDENT DOT KW_COUNT
     { Ast.ArrayCountExpression({ Identifier = $1} )}
-    // @Todo struct IDEN DOT
-    // Literal values
-    | literal      { Ast.LiteralExpression $1 }
 
-unary_expr: KW_NOT expr  { Ast.UnaryExpression(Ast.LogicalNot, $2) }
-    | MINUS expr         { Ast.UnaryExpression(Ast.Negate, $2) }
-    | PLUS expr          { Ast.UnaryExpression(Ast.Identity, $2) }
+    // @Todo struct IDEN DOT
+
+paren_primary: LPAREN expr RPAREN { $2 }
 
 arguments: arguments COMMA expr { $1 @ [$3] }
     | expr                      { [$1] }
@@ -279,9 +287,9 @@ arguments: arguments COMMA expr { $1 @ [$3] }
 literal: INT_LITERAL   { Ast.IntLiteral(int $1) }
     | FLOAT_LITERAL    { Ast.FloatLiteral(float32 $1) }
     | BYTE_LITERAL     { Ast.ByteLiteral(byte $1) }
-    | CHAR_LITERAL     { Ast.CharLiteral(char $1) }
     | STRING_LITERAL   { Ast.StringLiteral $1 }
-    | TEXT_LITERAL     { Ast.TextLiteral $1 }
+    | HASH KW_CHAR STRING_LITERAL { Ast.CharLiteral(char $3) } // @Todo error check string length
+    | HASH KW_TEXT STRING_LITERAL { Ast.TextLiteral $3 }
 
 %%
 

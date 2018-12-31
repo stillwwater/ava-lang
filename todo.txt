@@ -5,7 +5,7 @@ Crucial
 + [Parser OK] Variables, constants, operators, types
 + [Parser OK] Functions, if, while
 + Else if
-+ Nested functions
++ [Parser OK] Nested functions
 + [Parser OK] Static arrays/strings
 + [Parser OK] Arrays/strings (heap variables)
 + Structs
