@@ -1,23 +1,18 @@
 module Ast
-open System.Linq.Expressions
 
 type Program = Declaration list
 
 and Declaration =
     | VariableDecl of VariableDecl
-    | ConstantDecl of ConstantDecl
-    | ProcedureDecl of ProcedureDecl
     | DeclNop
 
 and VariableDecl =
-    | ScalarVariableDecl of Identifier * TypeSpec * Expression option
-    | ArrayVariableDecl of Identifier * TypeSpec
+    | ScalarVariableDecl of Identifier * TypeSpec option * Expression option
+    | ArrayVariableDecl of Identifier * Expression option * TypeSpec option * Aggregate option
+    // A fixed scalar is constant in value and is allocated in the .data section
+    | FixedScalarDecl of Identifier * Literal
+    // A fixed array is fixed in size and is allocated in the .data section
     | FixedArrayVariableDecl of Identifier * int * TypeSpec
-
-and ConstantDecl =
-    | ScalarConstantDecl of Identifier * Literal
-
-and ProcedureDecl =
     | InternalProcedureDecl of Identifier * Parameters * TypeSpec * CompoundStatement
     | PublicProcedureDecl of Identifier * Parameters * TypeSpec * CompoundStatement
 
@@ -33,6 +28,8 @@ and TypeSpec =
 and Identifier = string
 
 and Parameters = VariableDecl list
+
+and Aggregate = Expression list
 
 and IdentifierRef = { Identifier : string; }
 
@@ -59,7 +56,9 @@ and LocalDeclarations = VariableDecl list
 and Arguments = Expression list
 
 // @Todo: Elsif
-and IfStatement = Expression * Statement list * Statement list option
+and IfStatement = ConditionalClause list * Statement list option
+
+and ConditionalClause = Expression * Statement list
 
 and WhileStatement = Expression * Statement
 
@@ -75,7 +74,6 @@ and Expression =
     // @Todo: Array size vs list count
     // @Todo: Sizeof
     | LiteralExpression of Literal
-    //| ArrayDeclExpression of TypeSpec * Expression
 
 and BinaryOperaror =
     | Eq
@@ -86,6 +84,7 @@ and BinaryOperaror =
     | Gt
     | CondAnd
     | CondOr
+    | Xor
     | Add
     | Sub
     | Mul

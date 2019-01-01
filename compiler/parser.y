@@ -1,5 +1,11 @@
 %{
 open Ast
+
+let mutable syntax_error = false
+
+let yyerror (msg: string) = 
+    syntax_error <- true
+    printfn "syntax error: %s" msg
 %}
 
 // Start function
@@ -79,7 +85,7 @@ open Ast
 %type <Declaration> decl
 %type <VariableDecl> variable_decl
 %type <ProcedureDecl> procedure_decl
-%type <ConstantDecl> constant_decl
+%type <FixedDecl> fixed_decl
 %type <TypeSpec> type_spec
 %type <Parameters> parameters
 %type <Parameters> parameter_list
@@ -117,7 +123,7 @@ decl_list: decl_list decl     { $1 @ [$2] }
     | decl                    { [$1] }
 
 decl: variable_decl           { Ast.VariableDecl $1 }
-    | constant_decl           { Ast.ConstantDecl $1 }
+    | fixed_decl              { Ast.FixedDecl $1 }
     | procedure_decl          { Ast.ProcedureDecl $1 }
     | EOL                     { Ast.DeclNop } // @Temporary: Causes reduce/reduce conflicts
 
@@ -130,21 +136,38 @@ type_spec: KW_VOID   { Ast.Void }
     | KW_TEXT   { Ast.Text }
 
 // const :: 5
-constant_decl: IDENT DOUBLE_COLON literal    { Ast.ScalarConstantDecl($1, $3) }
+fixed_decl: fixed_scalar_decl { $1 }
+    | fixed_array_decl { $1 }
 
-// @Todo: var := epxr
-// var :int (defualt value is 0)
-variable_decl: IDENT COLON type_spec EOL
-    { Ast.ScalarVariableDecl($1, $3, None) }
+variable_decl: scalar_decl { $1 }
+    | array_decl { $1 }    
+
+fixed_scalar_decl: IDENT DOUBLE_COLON literal    { Ast.FixedScalarDecl($1, $3) }
+
+fixed_array_decl: IDENT DOUBLE_COLON LBRACKET INT_LITERAL RBRACKET KW_OF type_spec EOL
+    { Ast.FixedArrayVariableDecl($1, $4, $7) }
+
+scalar_decl: IDENT COLON type_spec EOL
+    { Ast.ScalarVariableDecl($1, Some($3), None) }
+    
     // var :int = expr
     | IDENT COLON type_spec SINGLE_EQUALS expr EOL
-    { Ast.ScalarVariableDecl($1, $3, Some($5)) }
-    // array := [] of int
-    | IDENT COLON_EQUALS LBRACKET RBRACKET KW_OF type_spec EOL
-    { Ast.ArrayVariableDecl($1, $6) }
-    // array := [5] of int
-    | IDENT COLON_EQUALS LBRACKET INT_LITERAL RBRACKET KW_OF type_spec EOL
-    { Ast.FixedArrayVariableDecl($1, $4, $7) }
+    { Ast.ScalarVariableDecl($1, Some($3), Some($5)) }
+    
+    // var := expr -- Implicit type
+    | IDENT COLON_EQUALS expr EOL
+    { Ast.ScalarVariableDecl($1, None, Some($3))}
+
+
+array_decl: IDENT COLON LBRACKET RBRACKET KW_OF type_spec EOL
+    { Ast.ArrayVariableDecl($1, None, Some($6), None) }
+
+    | IDENT COLON LBRACKET expr RBRACKET KW_OF type_spec EOL
+    { Ast.ArrayVariableDecl($1, Some($4), Some($7), None) }
+    
+    // array := (1, 2, 3, 4)
+    | IDENT COLON_EQUALS aggregate EOL
+    { Ast.ArrayVariableDecl($1, None, None, Some($3))}
 
 // main :: (arg : type) -> type
 procedure_decl: IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec compound_stmt
@@ -171,13 +194,13 @@ parameter_list: parameter_list COMMA parameter { $1 @ [$3] }
     | parameter { [$1] }
 
 parameter: IDENT COLON type_spec            
-    { Ast.ScalarVariableDecl($1, $3, None) }
+    { Ast.ScalarVariableDecl($1, Some $3, None) }
     // array : [] of int
     | IDENT COLON LBRACKET RBRACKET KW_OF type_spec
-    { Ast.ArrayVariableDecl($1, $6) }
+    { Ast.ArrayVariableDecl($1, None, Some $6, None) }
     // array : []int
     | IDENT COLON LBRACKET RBRACKET type_spec
-    { Ast.ArrayVariableDecl($1, $5) }
+    { Ast.ArrayVariableDecl($1, None, Some $5, None) }
 
 stmt_list: stmt_list stmt  { $1 @ [$2] }
     | stmt                 { [$1] }
@@ -219,6 +242,11 @@ continue_stmt: KW_CONTINUE EOL { }
 return_stmt: KW_RETURN expr EOL       { Some($2) }
     | KW_RETURN EOL       { None }
 
+expr_list: expr_list COMMA expr { $1 @ [$3] }
+    | expr { [$1] }
+
+aggregate: LPAREN expr_list RPAREN { $2 }
+
 expr: relation { $1 }
     | expr logical relation { Ast.BinaryExpression($1, $2, $3) }
     | IDENT SINGLE_EQUALS expr
@@ -234,7 +262,15 @@ logical: KW_AND { Ast.CondAnd }
 
 relation: equation { $1 }
     // Disallow cases like (x < 2 < 3)
+    // Technically it's ok to allow multiple relational comparisons
+    // but it can cause confusing cases like (x == x == x) which is a Type Error
+    // because the left hand side is evaluated to a bool first. The correct
+    // expression would be (x == x == True)
     | equation relational equation { Ast.BinaryExpression($1, $2, $3) }
+    | error relation {
+        yyerror "Multiple relation expressions"
+        $2
+    }
 
 relational: DOUBLE_EQUALS { Ast.Eq }
     | LESS_EQUALS         { Ast.LtEq }
