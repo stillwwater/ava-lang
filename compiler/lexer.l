@@ -9,9 +9,9 @@ open System.Text
 
 let str_buffer = new StringBuilder()
 
-let newline (lexbuf: LexBuffer<_>) =
+let set_newline (lexbuf: LexBuffer<_>) =
     // Update newline position informations
-    lexbuf.StartPos <- lexbuf.StartPos.NextLine
+    lexbuf.EndPos <- lexbuf.EndPos.NextLine
 
 let lexeme lexbuf =
     LexBuffer<char>.LexemeString lexbuf
@@ -26,7 +26,7 @@ rule tokenstream =
     parse
     | [' ''\t']+  { tokenstream lexbuf } // Skip whitespace @Todo: mark pos
     | "--"        { comment lexbuf }
-    | newline+    { EOL }           // Register new line
+    | newline+    { set_newline lexbuf |> ignore; EOL }           // Register new line
     // Literals
     | ['-']?digit+('.'digit+)   { FLOAT_LITERAL(float32(lexeme lexbuf)) }
     | ['-']?digit+              { INT_LITERAL(int(lexeme lexbuf)) }
@@ -50,6 +50,7 @@ rule tokenstream =
     | "not"      { KW_NOT }
     | "if"       { KW_IF }
     | "else"     { KW_ELSE }
+    | "elsif"    { KW_ELSIF }
     | "while"    { KW_WHILE }
     | "then"     { KW_THEN }
     | "do"       { KW_DO }

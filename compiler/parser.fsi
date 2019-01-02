@@ -125,8 +125,12 @@ type nonTerminalId =
     | NONTERM_decl_list
     | NONTERM_decl
     | NONTERM_type_spec
-    | NONTERM_constant_decl
+    | NONTERM_fixed_decl
     | NONTERM_variable_decl
+    | NONTERM_fixed_scalar_decl
+    | NONTERM_fixed_array_decl
+    | NONTERM_scalar_decl
+    | NONTERM_array_decl
     | NONTERM_procedure_decl
     | NONTERM_parameters
     | NONTERM_parameter_list
@@ -136,7 +140,11 @@ type nonTerminalId =
     | NONTERM_sexpr
     | NONTERM_while_stmt
     | NONTERM_if_stmt
+    | NONTERM_cond_clause_s
+    | NONTERM_cond_clause
+    | NONTERM_cond_part
     | NONTERM_condition
+    | NONTERM_else_opt
     | NONTERM_compound_stmt
     | NONTERM_break_stmt
     | NONTERM_continue_stmt

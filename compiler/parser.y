@@ -84,8 +84,6 @@ let yyerror (msg: string) =
 %type <Declaration list> decl_list
 %type <Declaration> decl
 %type <VariableDecl> variable_decl
-%type <ProcedureDecl> procedure_decl
-%type <FixedDecl> fixed_decl
 %type <TypeSpec> type_spec
 %type <Parameters> parameters
 %type <Parameters> parameter_list
@@ -123,9 +121,7 @@ decl_list: decl_list decl     { $1 @ [$2] }
     | decl                    { [$1] }
 
 decl: variable_decl           { Ast.VariableDecl $1 }
-    | fixed_decl              { Ast.FixedDecl $1 }
-    | procedure_decl          { Ast.ProcedureDecl $1 }
-    | EOL                     { Ast.DeclNop } // @Temporary: Causes reduce/reduce conflicts
+    | EOL                     { Ast.DeclNop} // @Temporary: Causes reduce/reduce conflicts
 
 type_spec: KW_VOID   { Ast.Void }
     | KW_INT    { Ast.Int }
@@ -140,7 +136,9 @@ fixed_decl: fixed_scalar_decl { $1 }
     | fixed_array_decl { $1 }
 
 variable_decl: scalar_decl { $1 }
-    | array_decl { $1 }    
+    | array_decl { $1 } 
+    | fixed_decl { $1 }
+    | procedure_decl { $1 }   
 
 fixed_scalar_decl: IDENT DOUBLE_COLON literal    { Ast.FixedScalarDecl($1, $3) }
 
@@ -214,22 +212,23 @@ stmt: decl               { Ast.Declaration $1 }
     | break_stmt         { Ast.BreakStatement }
     | continue_stmt      { Ast.ContinueStatement }
 
-sexpr: expr EOL            { Ast.Expression $1 }
+sexpr: expr EOL { Ast.Expression $1 }
 
-while_stmt: KW_WHILE expr stmt      { ($2, $3) }
+while_stmt: KW_WHILE expr stmt { ($2, $3) }
 
-if_stmt: KW_IF expr KW_THEN EOL stmt_list KW_END EOL
-    { ($2, $5, None) }
-    | KW_IF expr KW_THEN EOL stmt_list KW_ELSE stmt_list KW_END EOL
-    { ($2, $5, Some($7)) }
+if_stmt: KW_IF cond_clause_s KW_END EOL       { ($2, None) }
+    | KW_IF cond_clause_s else_opt KW_END EOL { ($2, Some($3)) }
+
+cond_clause_s: cond_clause { [$1] }
+	| cond_clause_s KW_ELSIF cond_clause { $1 @ [$3] }
+
+cond_clause: cond_part stmt_list { Ast.ConditionalClause($1, $2) }
+
+cond_part: condition KW_THEN { $1 }
 
 condition: expr { $1 }
 
-//
-// @Note:
-// Currently every compund statement requires KW_DO/KW_END
-// In reality if statements should have separate definitions
-//
+else_opt: KW_ELSE stmt_list { $2 }
 
 compound_stmt: KW_DO EOL stmt_list KW_END EOL    { $3 }
     | KW_DO EOL KW_END EOL    { [] }
