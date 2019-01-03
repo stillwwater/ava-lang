@@ -1,24 +1,26 @@
-Compiler
-========
+# Compiler
 
-Crucial
+Fundamental
 + [Parser OK] Variables, constants, operators, types
 + [Parser OK] Functions, if, while
-+ Else if
-+ [Parser OK] Nested functions
++ [Parser OK] Else if
++ [Parser OK] Nested functions?
 + [Parser OK] Static arrays/strings
 + [Parser OK] Arrays/strings (heap variables)
++ [Parser OK] Implicit types (x := 1)
++ [Parser OK] Packed strings
+
+Stage 2
 + Structs
-+ Implicit types (x := 1)
 + Casting
 + Auto deallocate memory
 + Implicit struct constructors
 + For loops
-+ Packed strings
 + switch
 + Type alias
 + Enums
 + Using/imports/exports
++ Array reassign (alloc, assign)
 
 Extra
 + Serialize static variables with serialize header section
@@ -28,13 +30,34 @@ Extra
 + Any type
 + Function as types (function references)
 
+Semantic Analysis
+=================
+
++ [OK] FIX: Procedure calls type checking identifiers
++ [OK] Declarations with expressions
++ Global declarations with expressions
++ [OK] Implicit types
++ [OK] Array implicit types
++ Constant scalars can be assigned to an expression so long as the
+  expression resolves to a constant (composed of literals and other
+  constant scalars)
++ Fixed scalars don't need to be immutable, but are allocated in the
+  .data section. Compiler should issue warning if they are declared
+  in a local scope since they are global variables.
+
 Parser
 ======
 
-+ FIX: Comments only work when there's no empty lines
++ FIX: Fixed scalars need type
++ Import/Export statements
++ Derivative as lexer tokens to make '# der' illegal if favor of '#der'
++ Packed strings: Remove text type in favor of #pack derivative
++ [OK] Declare array with initialized values
++ FIX: Inline comments fail if there is a declaration on the following line
++ [OK] FIX: Comments only work when there's no empty lines
 + [OK] FIX: Registering quotes in strings
 + [OK] Print ast
-+ handling of empty lines
++ FIX: handling of empty lines with comments
 + Error messages
 + Identifiers with numbers
 + [OK] If statements need to have separate handling of compound statements

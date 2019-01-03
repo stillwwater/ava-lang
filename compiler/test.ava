@@ -4,17 +4,18 @@
 
 constant :: 3.14159
 value: int
-array : [] of int
-array :: [12] of int
-array : [12] of int
+a : [12] of int
+aa : [] of int
+aaa :: [12] of int
 
 main :: (args: [] int, num: int) -> int do
-    2 + x (1 + 2)
     print(args[0])
     x: int
     args[args.count - 1] = 67 + 76 * 2
     implicit := 1
+
     implicit_array := (1, 2, 3, 4, 5)
+
     x = x * 2 + 1
     x = 1 * 2 + 1
     x = 2 + (-args[x])
@@ -41,7 +42,7 @@ main :: (args: [] int, num: int) -> int do
     v : str = "hello
     world"
 
-    while something(x) + 2 < 10 do
+    while x + 2 < 10 do
         print("Hello world!")
         x = x + 1
         break

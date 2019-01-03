@@ -1,0 +1,22 @@
+main :: (y: [] int) -> int do
+    x: int = 2
+
+    implicit := 89
+
+    v: int
+    v = implicit
+
+    fixed :: [12] of str
+
+    a := (1, 2, 3)
+
+    if x == y[0] then
+        print("Hello Word!")
+    elsif x < 0 then
+        print("x < 0")
+    else
+        print("this is not allowed")
+        return 0
+    end
+    return 1
+end

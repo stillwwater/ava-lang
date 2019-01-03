@@ -3,8 +3,10 @@
 /**/bin/
 /**/obj/
 /**/.vs/
+/**/.vscode/
 *.s
 *.o
 *.c
+*.output
 oft.asm
 doc.md

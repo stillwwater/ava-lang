@@ -14,6 +14,7 @@
       <OtherFlags>--unicode</OtherFlags>
     </FsLex>
     <Compile Include="lexer.fs" />
+    <Compile Include="semantic_analysis.fs" />
     <Compile Include="avac.fs" />
   </ItemGroup>
   <ItemGroup>
