@@ -37,8 +37,18 @@ let main(args) =
 
     sw.Stop()
 
-    if args.Length > 1 && args.[1] = "-d" then
-        print_debug_info program sem_analysis
+    if args.Length > 1 then
+        if args.[1] = "-d" then
+            print_debug_info program sem_analysis
+        elif args.[1] = "-rd" then
+            while true do
+                printf "symbols > "
+                let search = System.Console.ReadLine()
+
+                if search <> "" then
+                    printfn "%A" (debug_symbol_search sem_analysis search)
+        elif args.[1] = "-ast" then
+            printfn "%A" program
 
     printfn "compiled %s in %.2f seconds" args.[0] (sw.Elapsed.TotalSeconds)
     0

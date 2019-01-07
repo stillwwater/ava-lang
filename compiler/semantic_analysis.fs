@@ -3,6 +3,7 @@
 ///
 
 module SemanticAnalysis
+open System.Linq.Expressions
 
 #nowarn "40" // Turn off waring for recursive objects
 
@@ -14,12 +15,9 @@ type SymbolScope(parent: SymbolScope option) =
 
     let ident_from_decl =
         function
-        | ScalarVariableDecl(id, _, _)
-        | ArrayVariableDecl(id, _, _, _)
-        | FixedScalarDecl(id, _)
-        | FixedArrayVariableDecl(id, _, _)
-        | InternalProcedureDecl(id, _, _, _)
-        | PublicProcedureDecl(id, _, _, _) -> id
+        | ScalarDecl(_, id, _, _)
+        | ArrayDecl(_, id, _, _, _)
+        | ProcedureDecl(_, id, _, _, _) -> id
 
     /// Check if declaration has an identifier
     let declares_ident (id_ref: IdentifierRef) decl =
@@ -37,22 +35,24 @@ type SymbolScope(parent: SymbolScope option) =
         let found = List.tryFind (fun x -> declares_ident id_ref x) list
 
         match found with
-        | Some(decl) -> decl
+        | Some(decl) -> Some(decl)
         | None ->
             // Check for declaration in parent scope
             match parent with
             | Some(ss) -> ss.FindDeclaration id_ref
-            // @Todo error
-            | None -> raise (new System.Exception(sprintf "Error: Undeclared identifier %A" id_ref))
+            | None -> None
 
     type SymbolScopeStack() =
         let stack = new Stack<SymbolScope>()
         do stack.Push(new SymbolScope(None))
 
         member x.CurrentScope = stack.Peek()
+
         /// Push new scope and set its parent to the current scope
         member x.Push() = stack.Push(new SymbolScope(Some(stack.Peek())))
+
         member x.Pop() = stack.Pop()
+
         /// Add declaration to current scope
         member x.AddDeclaration decl = stack.Peek().AddDeclaration decl
 
@@ -65,18 +65,26 @@ type VariableType =
 
 let scalar_type t = { Type = t; IsArray = false }
 
-let typeof_decl  =
+let typeof_decl =
     function
-    // @Todo: implicit types, use Void for now
-    | Ast.ScalarVariableDecl(_, Some(t), _) ->  { Type = t; IsArray = false }
-    | Ast.ScalarVariableDecl(_, None, _) -> { Type = Void; IsArray = false }
-    | Ast.ArrayVariableDecl(_, _, Some(t), _) -> { Type = t; IsArray = true }
-    | Ast.ArrayVariableDecl(_, _, None, _) -> { Type = Void; IsArray = true }
-    | Ast.FixedScalarDecl(_, _) -> { Type = Void; IsArray = false }
-    | Ast.FixedArrayVariableDecl(_, _, t) -> { Type = t; IsArray = true }
+    // @Todo: None types should be an error at this point
+    | Ast.ScalarDecl(_, _, Some(t), _) ->  { Type = t; IsArray = false }
+    | Ast.ScalarDecl(_, _, None, _) -> { Type = Void; IsArray = false }
+    | Ast.ArrayDecl(_, _, _, Some(t), _) -> { Type = t; IsArray = true }
+    | Ast.ArrayDecl(_, _, _, None, _) -> { Type = Void; IsArray = true }
     // @Todo: handle procedure declarations properly
-    | Ast.InternalProcedureDecl(_, _, t, _) -> { Type = t; IsArray = false }
-    | Ast.PublicProcedureDecl(_, _, t, _) -> { Type = t; IsArray = false }
+    | Ast.ProcedureDecl(_, _, _, t, _) -> { Type = t; IsArray = false }
+
+let eval_static_array_size expr =
+    match expr with
+    | LiteralExpression(l) ->
+        match l with
+        | IntLiteral(i) -> Some(i)
+        | _ -> None
+    | _ -> None
+
+let int_to_expr value =
+    LiteralExpression(IntLiteral value)
 
 type ProcedureTableEntry =
     {
@@ -91,12 +99,10 @@ type ProcedureTable(program: Program) as self =
         match decl with
         | VariableDecl(d) ->
             match d with
-            | ScalarVariableDecl(_)
-            | ArrayVariableDecl(_)
-            | FixedScalarDecl(_)
-            | FixedArrayVariableDecl(_) -> ()
-            | InternalProcedureDecl(id, p, t, _)
-            | PublicProcedureDecl(id, p, t, _) ->
+            | ScalarDecl(_)
+            | ArrayDecl(_) ->
+                ()
+            | ProcedureDecl(_, id, p, t, _) ->
                 if self.ContainsKey id then
                     // @Todo: Error
                     printfn "Procedure %s already defined" id
@@ -123,14 +129,23 @@ type SymbolTable(program: Declaration list) as self =
         match decl with
         | VariableDecl(d) ->
             match d with
-            | ScalarVariableDecl(_)
-            | ArrayVariableDecl(_) // @Todo scan array expression for size
-            | FixedScalarDecl(_)
-            | FixedArrayVariableDecl(_) ->
+            | ScalarDecl(_)
+            | ArrayDecl(_) ->
                 scope_stack.AddDeclaration d
-            | InternalProcedureDecl(a, b, c, d)
-            | PublicProcedureDecl(a, b, c, d) -> scan_proc_decl(a, b, c, d)
+            | ProcedureDecl(_,a, b, c, e) ->
+                // Procedure gets added to global scope
+                scope_stack.AddDeclaration d
+                map_identifier { Identifier = a }
+                scan_proc_decl(a, b, c, e)
         | DeclNop -> ()
+
+    /// Map identifier to its declaration
+    and map_identifier (id_ref: IdentifierRef) =
+        let decl = scope_stack.CurrentScope.FindDeclaration id_ref
+
+        match decl with
+        | Some(d) -> self.Add(id_ref, d)
+        | None -> printfn "Undeclared identifier '%s'" id_ref.Identifier
 
     and scan_proc_decl (_, parameters, return_type, block) =
         let rec scan_block (statements) =
@@ -146,15 +161,11 @@ type SymbolTable(program: Declaration list) as self =
                     scope_stack.AddDeclaration d
                     match d with
                     // @Todo: Scan array expression for size
-                    | ScalarVariableDecl(id, _, None) -> map_identifier { Identifier = id }
-                    | ScalarVariableDecl(id, _, Some(e)) ->
+                    | ScalarDecl(_, id, _, None) -> map_identifier { Identifier = id }
+                    | ScalarDecl(_, id, _, Some(e)) ->
                         scan_expression e
                         map_identifier { Identifier = id }
-                    | ArrayVariableDecl(id, _, _, _)
-                    | FixedArrayVariableDecl(id, _, _) -> map_identifier { Identifier = id }
-                    | FixedScalarDecl(id, l) ->
-                        //scan_expression l
-                        map_identifier { Identifier = id }
+                    | ArrayDecl(_, id, _, _, _)  -> map_identifier { Identifier = id }
                     | _ -> ()
                 | DeclNop -> ()
             | SExpression(sexpr) ->
@@ -185,11 +196,6 @@ type SymbolTable(program: Declaration list) as self =
                 if loop_stmt_stack.Count = 0 then
                     // @Todo: error
                     printfn "Invalid keyword 'continue' outside of loop."
-
-        /// Map identifier to its declaration
-        and map_identifier (id_ref: IdentifierRef) =
-            let decl = scope_stack.CurrentScope.FindDeclaration id_ref
-            self.Add(id_ref, decl)
 
         and scan_expression =
             function
@@ -230,17 +236,29 @@ type SymbolTable(program: Declaration list) as self =
     do program |> List.iter scan_decl
 
     member x.GetIdentifierType id_ref =
-        typeof_decl self.[id_ref]
+        if self.ContainsKey(id_ref) then
+            typeof_decl self.[id_ref]
+        else
+            // Undefinied identifier, return void to attempt error recovery
+            // and continue checking for more errors
+            scalar_type Void
 
 type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTable) as self =
     inherit Dictionary<Expression, VariableType>(HashIdentity.Reference)
+
+    let rec is_const_expression expr =
+        match expr with
+        | LiteralExpression(l) -> true
+        | BinaryExpression(lhs, _, rhs) ->
+            is_const_expression lhs && is_const_expression rhs
+        | UnaryExpression(_, e) -> is_const_expression e
+        | _ -> false
 
     let rec scan_decl decl =
         match decl with
         | VariableDecl(d) ->
             match d with
-            | InternalProcedureDecl(a, b, c, d)
-            | PublicProcedureDecl(a, b, c, d) -> scan_proc_decl(a, b, c, d)
+            | ProcedureDecl(_, a, b, c, d) -> scan_proc_decl(a, b, c, d)
             | _ -> () // @Todo: Handle global expressions
         | DeclNop -> ()
 
@@ -254,32 +272,76 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
              let duplicate_decl = types.[List.findIndex ((=) id_ref) refs]
              types <- duplicate_decl :: types
 
+        let infer_scalar_type id_ref e =
+            if not (List.contains id_ref refs) then
+                let implicit_type = scan_expression e
+                Some implicit_type
+            else
+                resolve_duplicate id_ref
+                None
+
+        let infer_array_type id_ref a =
+            if not (List.contains id_ref refs) then
+                let mutable implicit_type = scalar_type Void
+                for e in a do
+                    let expr_type = scan_expression e
+
+                    if implicit_type.Type <> Void && expr_type <> implicit_type then
+                        // Assert all elements in the array are of the same type
+                        printfn "TypeError: expected %A, got %A" implicit_type.Type expr_type.Type
+
+                    implicit_type <- expr_type
+                Some implicit_type
+            else
+                resolve_duplicate id_ref
+                None
+
         for symbol in symbol_table do
             let id_ref = symbol.Key
             let decl = symbol.Value
 
             match decl with
-            | ScalarVariableDecl(id, None, Some(e)) ->
-                if not (List.contains id_ref refs) then
-                    let implicit_type = scan_expression e
-                    types <- ScalarVariableDecl(id, Some(implicit_type.Type), Some(e)) :: types
-                else
-                    resolve_duplicate id_ref
+            | ScalarDecl(flags, id, None, Some(e)) ->
+                if flags.HasFlag ScalarFlags.CONSTANT && not (is_const_expression e) then
+                    printfn "Error: Expected constant value for '%s'" id
+
+                match infer_scalar_type id_ref e with
+                | Some(i) ->
+                    types <- ScalarDecl(flags, id, Some(i.Type), Some(e)) :: types
+                | None -> ()
                 refs <- id_ref :: refs
-            | ArrayVariableDecl(id, exp, None, Some(a)) ->
-                if not (List.contains id_ref refs) then
-                    let mutable implicit_type = scalar_type Void
-                    for e in a do
-                        let expr_type = scan_expression e
+            | ArrayDecl(flags, id, decl_size, array_type, Some(a)) ->
+                // Arrays initialized to an aggregate are implicitly marked as fixed
+                let new_flags = (flags &&& ~~~ArrayFlags.NONE) ||| ArrayFlags.FIXED
 
-                        if implicit_type.Type <> Void && expr_type <> implicit_type then
-                            // Assert all elements in the array are of the same type
-                            printfn "TypeError: expected %A, got %A" implicit_type.Type expr_type.Type
+                let sz =
+                    match decl_size with
+                    | Some(e) ->
+                        // Array declared with size must be a fixed array
+                        match eval_static_array_size e with
+                            | Some(s) ->
+                                if s <> a.Length then
+                                    // @Todo: Clearer message once error system is implememted
+                                    printfn "Error: %s declared with size %i will have size %i." id s a.Length
+                            | None ->
+                                printfn "Error: A constant value is expected %s." id
+                        a.Length
+                    | None ->
+                        a.Length
 
-                        implicit_type <- expr_type
-                    types <- ArrayVariableDecl(id, exp, Some(implicit_type.Type), Some(a)) :: types
-                else
-                    resolve_duplicate id_ref
+                let size_expr = Some(int_to_expr(sz))
+
+                match infer_array_type id_ref a with
+                | Some(impl) ->
+                    match array_type with
+                    | Some(t) ->
+                        if impl.Type <> t then
+                            // Declared array type does not match aggregate type
+                            printfn "TypeError: expected %s, got %s" (t.ToString()) (impl.Type.ToString())
+                        types <- ArrayDecl(new_flags, id, size_expr, Some(t), Some(a)) :: types
+                    | None ->
+                        types <- ArrayDecl(new_flags, id, size_expr, Some(impl.Type), Some(a)) :: types
+                | None -> ()
                 refs <- id_ref :: refs
             | _ -> ()
 
@@ -336,6 +398,15 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                     // @Todo: error
                     printfn "TypeError: expected %s, got %s" (typeof_id.ToString()) (typeof_e.ToString())
 
+                match symbol_table.[id] with
+                | ScalarDecl(flags, _, _, _) ->
+                    if flags.HasFlag(ScalarFlags.CONSTANT) then
+                        printfn "Error: Cannot reassign constant '%s'." id.Identifier
+                | ArrayDecl(_, id, _, _, _) ->
+                    printfn "Error: Cannot reassign array '%s'" id // @Temporary
+                | ProcedureDecl(_, id, _, _, _) ->
+                    printfn "Error: Cannot reassign procedure '%s'" id
+
                 typeof_id
             | ArrayAssignExpression(id, e1, e2) ->
                 check_index_type e1
@@ -379,28 +450,44 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
             | UnaryExpression(_, e) -> scan_expression e
             | IdentifierExpression(id) -> symbol_table.GetIdentifierType id
             | ArrayIdentifierExpression(id, e) ->
+                let typeof_id = symbol_table.GetIdentifierType id
+
+                if not typeof_id.IsArray then
+                    // @Todo: error
+                    printfn "TypeError: Cannot apply indexing with '[]' to value of type %s" (typeof_id.ToString())
+
                 check_index_type e
                 scalar_type (symbol_table.GetIdentifierType id).Type
             | ProcedureCallExpression(id, args) ->
                 if not (proc_table.ContainsKey id.Identifier) then
                     // @Todo: error
-                    printfn "Undeclared identifier: %s" (id.Identifier)
 
-                let proc = proc_table.[id.Identifier]
-                let param_types = proc.ParameterTypes
+                    if symbol_table.ContainsKey id then
+                        // @Todo
+                        printfn "'%s' is not a procedure and thus cannot be called" id.Identifier
+                    else
+                        printfn "Undeclared procedure: %s" (id.Identifier)
 
-                if List.length args <> List.length param_types then
-                    printfn "Wrong number of arguments for %s: expected %i got %i." (id.Identifier) (List.length param_types) (List.length args)
+                if proc_table.ContainsKey(id.Identifier) then
+                    let proc = proc_table.[id.Identifier]
 
-                let arg_types = args |> List.map scan_expression
+                    let param_types = proc.ParameterTypes
 
-                let param_types_match index a b =
-                    if a <> b && b <> (scalar_type Void) then
-                        printfn "Invalid argument for %s: expected %s got %s" (id.Identifier) (b.ToString()) (a.ToString())
+                    if List.length args <> List.length param_types then
+                        printfn "Wrong number of arguments for %s: expected %i got %i." (id.Identifier) (List.length param_types) (List.length args)
 
-                List.iteri2 param_types_match arg_types param_types
+                    let arg_types = args |> List.map scan_expression
 
-                scalar_type proc.ReturnType
+                    let param_types_match index a b =
+                        if a <> b && b <> (scalar_type Void) then
+                            printfn "Invalid argument for %s: expected %s got %s" (id.Identifier) (b.ToString()) (a.ToString())
+
+                    List.iteri2 param_types_match arg_types param_types
+
+                    scalar_type proc.ReturnType
+                else
+                    // If procedure is undifined return void to attempt error recovery
+                    scalar_type Void
             | ArrayCountExpression(id) -> scalar_type Int
             | LiteralExpression(l) ->
                 match l with
@@ -442,3 +529,12 @@ let analyse program =
         ProcedureTable  = proc_table;
         ExpressionTable = expr_table;
     }
+
+let debug_symbol_search analysis_result (search_string: string) =
+    let mutable symbols = []
+
+    for kv in analysis_result.SymbolTable do
+        if kv.Key.Identifier = search_string then
+            symbols <- kv.Value :: symbols
+
+    symbols

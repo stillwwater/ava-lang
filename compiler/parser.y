@@ -3,7 +3,10 @@ open Ast
 
 let mutable syntax_error = false
 
-let yyerror (msg: string) = 
+let flag_static_fixed = ArrayFlags.STATIC ||| ArrayFlags.FIXED
+let flag_static_const = ScalarFlags.STATIC ||| ScalarFlags.CONSTANT
+
+let yyerror (msg: string) =
     syntax_error <- true
     printfn "syntax error: %s" msg
 %}
@@ -136,53 +139,81 @@ fixed_decl: fixed_scalar_decl { $1 }
     | fixed_array_decl { $1 }
 
 variable_decl: scalar_decl { $1 }
-    | array_decl { $1 } 
+    | array_decl { $1 }
     | fixed_decl { $1 }
-    | procedure_decl { $1 }   
+    | procedure_decl { $1 }
 
-fixed_scalar_decl: IDENT DOUBLE_COLON literal    { Ast.FixedScalarDecl($1, $3) }
+fixed_scalar_decl: IDENT DOUBLE_COLON expr EOL
+    { Ast.ScalarDecl(ScalarFlags.STATIC, $1, None, Some($3)) }
 
-fixed_array_decl: IDENT DOUBLE_COLON LBRACKET INT_LITERAL RBRACKET KW_OF type_spec EOL
-    { Ast.FixedArrayVariableDecl($1, $4, $7) }
+    // array :: [12] of int
+    // expr must be evaluated to a constant
+fixed_array_decl: IDENT DOUBLE_COLON LBRACKET expr RBRACKET KW_OF type_spec EOL
+    { Ast.ArrayDecl(flag_static_fixed, $1, Some($4), Some($7), None) }
+
+    // array :: (1, 2, 3, 4)
+    | IDENT DOUBLE_COLON aggregate EOL
+    { Ast.ArrayDecl(flag_static_fixed, $1, None, None, Some($3) )}
+
+    // array :: [] of type = (1, 2, 3, 4)
+    // @Todo: Maybe this is not allowed since '[]' can imply that this is a heap array
+    // when it is not.
+    | IDENT DOUBLE_COLON LBRACKET RBRACKET KW_OF type_spec SINGLE_EQUALS aggregate EOL
+    { Ast.ArrayDecl(flag_static_fixed, $1, None, Some($6), Some($8)) }
+
+    // array :: [12] of type = (1, 2, 3, 4)
+    | IDENT DOUBLE_COLON LBRACKET expr RBRACKET KW_OF type_spec SINGLE_EQUALS aggregate EOL
+    { Ast.ArrayDecl(flag_static_fixed, $1, Some($4), Some($7), Some($9)) }
 
 scalar_decl: IDENT COLON type_spec EOL
-    { Ast.ScalarVariableDecl($1, Some($3), None) }
-    
+    { Ast.ScalarDecl(ScalarFlags.NONE, $1, Some($3), None) }
+
     // var :int = expr
     | IDENT COLON type_spec SINGLE_EQUALS expr EOL
-    { Ast.ScalarVariableDecl($1, Some($3), Some($5)) }
-    
+    { Ast.ScalarDecl(ScalarFlags.NONE, $1, Some($3), Some($5)) }
+
     // var := expr -- Implicit type
     | IDENT COLON_EQUALS expr EOL
-    { Ast.ScalarVariableDecl($1, None, Some($3))}
+    { Ast.ScalarDecl(ScalarFlags.NONE, $1, None, Some($3))}
 
 
+    // array : [] of int (variable size)
 array_decl: IDENT COLON LBRACKET RBRACKET KW_OF type_spec EOL
-    { Ast.ArrayVariableDecl($1, None, Some($6), None) }
+    { Ast.ArrayDecl(ArrayFlags.NONE, $1, None, Some($6), None) }
 
+    // array : [12] of int (fixed size)
     | IDENT COLON LBRACKET expr RBRACKET KW_OF type_spec EOL
-    { Ast.ArrayVariableDecl($1, Some($4), Some($7), None) }
-    
+    { Ast.ArrayDecl(ArrayFlags.FIXED, $1, Some($4), Some($7), None) }
+
     // array := (1, 2, 3, 4)
     | IDENT COLON_EQUALS aggregate EOL
-    { Ast.ArrayVariableDecl($1, None, None, Some($3))}
+    { Ast.ArrayDecl(ArrayFlags.NONE, $1, None, None, Some($3))}
+
+    // array : [] of type = (1, 2, 3, 4)
+    | IDENT COLON LBRACKET RBRACKET KW_OF type_spec SINGLE_EQUALS aggregate EOL
+    { Ast.ArrayDecl(ArrayFlags.NONE, $1, None, Some($6), Some($8)) }
+
+    // array : [12] of type = (1, 2, 3, 4)
+    | IDENT COLON LBRACKET expr RBRACKET KW_OF type_spec SINGLE_EQUALS aggregate EOL
+    { Ast.ArrayDecl(ArrayFlags.FIXED, $1, Some($4), Some($7), Some($9)) }
 
 // main :: (arg : type) -> type
 procedure_decl: IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec compound_stmt
-    { Ast.InternalProcedureDecl($1, $4, $7, $8)}
+    { Ast.ProcedureDecl(ProcFlags.INTERNAL, $1, $4, $7, $8)}
 
     | IDENT DOUBLE_COLON LPAREN RPAREN RARROW type_spec compound_stmt
-    { Ast.InternalProcedureDecl($1, [], $6, $7)}
+    { Ast.ProcedureDecl(ProcFlags.INTERNAL, $1, [], $6, $7)}
 
     | IDENT DOUBLE_COLON LPAREN parameters RPAREN compound_stmt
-    { Ast.InternalProcedureDecl($1, $4, Ast.Void, $6)}
+    { Ast.ProcedureDecl(ProcFlags.INTERNAL, $1, $4, Ast.Void, $6)}
 
     | IDENT DOUBLE_COLON LPAREN RPAREN compound_stmt
-    { Ast.InternalProcedureDecl($1, [], Ast.Void, $5)}
+    { Ast.ProcedureDecl(ProcFlags.INTERNAL, $1, [], Ast.Void, $5)}
 
     // export main :: (arg : type) -> type
+    // @Todo: KW_EXPORT can be applied to any declaration
     | KW_EXPORT IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec compound_stmt
-    { Ast.PublicProcedureDecl($2, $5, $8, $9)}
+    { Ast.ProcedureDecl(ProcFlags.PUBLIC, $2, $5, $8, $9)}
 
 parameters: parameter_list  { $1 }
     // @Todo: ommit void
@@ -191,14 +222,14 @@ parameters: parameter_list  { $1 }
 parameter_list: parameter_list COMMA parameter { $1 @ [$3] }
     | parameter { [$1] }
 
-parameter: IDENT COLON type_spec            
-    { Ast.ScalarVariableDecl($1, Some $3, None) }
+parameter: IDENT COLON type_spec
+    { Ast.ScalarDecl(ScalarFlags.NONE, $1, Some $3, None) }
     // array : [] of int
     | IDENT COLON LBRACKET RBRACKET KW_OF type_spec
-    { Ast.ArrayVariableDecl($1, None, Some $6, None) }
+    { Ast.ArrayDecl(ArrayFlags.NONE, $1, None, Some $6, None) }
     // array : []int
     | IDENT COLON LBRACKET RBRACKET type_spec
-    { Ast.ArrayVariableDecl($1, None, Some $5, None) }
+    { Ast.ArrayDecl(ArrayFlags.NONE, $1, None, Some $5, None) }
 
 stmt_list: stmt_list stmt  { $1 @ [$2] }
     | stmt                 { [$1] }

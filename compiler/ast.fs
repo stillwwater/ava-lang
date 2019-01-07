@@ -1,5 +1,28 @@
 module Ast
 
+open System
+
+[<Flags>]
+type ProcFlags =
+    // @Todo: These flags should apply to any declaration
+    // DeclFlgs * VariableDecl
+    | INTERNAL = 0b0001
+    | PUBLIC   = 0b0010
+
+[<Flags>]
+type ScalarFlags =
+    | NONE     = 0b0001
+    | STATIC   = 0b0010
+    | CONSTANT = 0b0100
+    | SERIAL   = 0b1000
+
+[<Flags>]
+type ArrayFlags =
+    | NONE     = 0b0001
+    | STATIC   = 0b0010
+    | FIXED    = 0b0100
+    | SERIAL   = 0b1000
+
 type Program = Declaration list
 
 and Declaration =
@@ -7,14 +30,9 @@ and Declaration =
     | DeclNop
 
 and VariableDecl =
-    | ScalarVariableDecl of Identifier * TypeSpec option * Expression option
-    | ArrayVariableDecl of Identifier * Expression option * TypeSpec option * Aggregate option
-    // A fixed scalar is constant in value and is allocated in the .data section
-    | FixedScalarDecl of Identifier * Literal
-    // A fixed array is fixed in size and is allocated in the .data section
-    | FixedArrayVariableDecl of Identifier * int * TypeSpec
-    | InternalProcedureDecl of Identifier * Parameters * TypeSpec * CompoundStatement
-    | PublicProcedureDecl of Identifier * Parameters * TypeSpec * CompoundStatement
+    | ScalarDecl of ScalarFlags * Identifier * TypeSpec option * Expression option
+    | ArrayDecl of ArrayFlags * Identifier * Expression option * TypeSpec option * Aggregate option
+    | ProcedureDecl of ProcFlags * Identifier * Parameters * TypeSpec * CompoundStatement
 
 and TypeSpec =
     | Void   // 1 cell

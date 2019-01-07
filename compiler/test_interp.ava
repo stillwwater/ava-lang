@@ -1,3 +1,6 @@
+append :: (a : [] int, x : int) do
+end
+
 main :: (y: [] int) -> int do
     x: int = 2
 
@@ -6,9 +9,16 @@ main :: (y: [] int) -> int do
     v: int
     v = implicit
 
-    fixed :: [12] of str
+    fixed : [] of int = (1, 2)
 
     a := (1, 2, 3)
+
+    b : [] of int
+
+    c : [10] of int
+
+    static :: [10] of int
+    append(static, 12)
 
     if x == y[0] then
         print("Hello Word!")
