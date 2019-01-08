@@ -33,12 +33,15 @@ namespace Ava
 
             Arena arena;
 
-            while (address + nunits < vm.cpu.hp) {
+            while (address < vm.cpu.hp) {
                 arena = ReadHeader(vm, address);
 
                 // @Todo: coallescing
 
                 if (arena.state == Arena.State.FREE && (arena.size == size || arena.size == 0)) {
+                    if (address + nunits >= vm.cpu.hp) {
+                        break;
+                    }
                     // Found a free arena with the required size
                     arena.state = Arena.State.RWRITE;
                     arena.size = size;
