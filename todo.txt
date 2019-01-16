@@ -30,9 +30,21 @@ Extra
 + Any type
 + Function as types (function references)
 
+IR Compiler
+===========
+
++ Maybe we need to differentiate loading a value from the stack vs
+  loading the value pointed by a pointer on the stack
+
 Semantic Analysis
 =================
 
++ FIX: array[1] = int_literal gives a type_error because it expects
+  an [] int instead.
+    -- This should not throw an error
+    array : [4] of int
+    array[1] = 5 -- TypeError: Expected [] of int, got int
++ Handle [] char being equivalent to str
 + [OK] FIX: Procedure calls type checking identifiers
 + [OK] Declarations with expressions
 + Global declarations with expressions
@@ -48,6 +60,7 @@ Semantic Analysis
 Parser
 ======
 
++ Remove text type, use [] of byte with #pack
 + FIX: Fixed scalars need type
 + Import/Export statements
 + Derivative as lexer tokens to make '# der' illegal if favor of '#der'

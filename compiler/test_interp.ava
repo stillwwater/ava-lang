@@ -1,9 +1,26 @@
-append :: (a : [] int, x : int) do
+append :: (a : [] int, x : int) -> int do
+    z := a[1] + 2
+    return z
+end
+
+abs :: (value: int) -> int do
+    if value < 0 then
+        return -value
+    end
+    return value
+end
+
+abss :: (x: int) -> int do
+    if x < 0 then
+        return -x
+    else
+        return x
+    end
 end
 
 main :: (y: [] int) -> int do
     x: int = 2
-
+    z: float = 1
     implicit := 89
 
     v: int
@@ -13,8 +30,9 @@ main :: (y: [] int) -> int do
 
     a := (1, 2, 3)
 
-    b : [] of int
+    v = a[2]
 
+    b : [] of int
     c : [10] of int
 
     static :: [10] of int
