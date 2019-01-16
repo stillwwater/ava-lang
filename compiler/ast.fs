@@ -30,9 +30,9 @@ and Declaration =
     | DeclNop
 
 and VariableDecl =
-    | ScalarDecl of ScalarFlags * Identifier * TypeSpec option * Expression option
-    | ArrayDecl of ArrayFlags * Identifier * Expression option * TypeSpec option * Aggregate option
-    | ProcedureDecl of ProcFlags * Identifier * Parameters * TypeSpec * CompoundStatement
+    | ScalarDecl of ScalarFlags * IdentifierRef * TypeSpec option * Expression option
+    | ArrayDecl of ArrayFlags * IdentifierRef * Expression option * TypeSpec option * Aggregate option
+    | ProcedureDecl of ProcFlags * IdentifierRef * Parameters * TypeSpec * CompoundStatement
 
 and TypeSpec =
     | Void   // 1 cell
@@ -111,6 +111,7 @@ and BinaryOperaror =
 
 and UnaryOperator =
     | LogicalNot
+    | BitwiseNot
     | Negate
     | Identity
 

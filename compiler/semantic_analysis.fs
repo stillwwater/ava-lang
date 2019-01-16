@@ -3,7 +3,6 @@
 ///
 
 module SemanticAnalysis
-open System.Linq.Expressions
 
 #nowarn "40" // Turn off waring for recursive objects
 
@@ -17,7 +16,7 @@ type SymbolScope(parent: SymbolScope option) =
         function
         | ScalarDecl(_, id, _, _)
         | ArrayDecl(_, id, _, _, _)
-        | ProcedureDecl(_, id, _, _, _) -> id
+        | ProcedureDecl(_, id, _, _, _) -> id.Identifier
 
     /// Check if declaration has an identifier
     let declares_ident (id_ref: IdentifierRef) decl =
@@ -102,7 +101,8 @@ type ProcedureTable(program: Program) as self =
             | ScalarDecl(_)
             | ArrayDecl(_) ->
                 ()
-            | ProcedureDecl(_, id, p, t, _) ->
+            | ProcedureDecl(_, id_ref, p, t, _) ->
+                let id = id_ref.Identifier
                 if self.ContainsKey id then
                     // @Todo: Error
                     printfn "Procedure %s already defined" id
@@ -135,7 +135,7 @@ type SymbolTable(program: Declaration list) as self =
             | ProcedureDecl(_,a, b, c, e) ->
                 // Procedure gets added to global scope
                 scope_stack.AddDeclaration d
-                map_identifier { Identifier = a }
+                map_identifier a
                 scan_proc_decl(a, b, c, e)
         | DeclNop -> ()
 
@@ -161,11 +161,11 @@ type SymbolTable(program: Declaration list) as self =
                     scope_stack.AddDeclaration d
                     match d with
                     // @Todo: Scan array expression for size
-                    | ScalarDecl(_, id, _, None) -> map_identifier { Identifier = id }
-                    | ScalarDecl(_, id, _, Some(e)) ->
+                    | ScalarDecl(_, id_ref, _, None) -> map_identifier id_ref
+                    | ScalarDecl(_, id_ref, _, Some(e)) ->
                         scan_expression e
-                        map_identifier { Identifier = id }
-                    | ArrayDecl(_, id, _, _, _)  -> map_identifier { Identifier = id }
+                        map_identifier id_ref
+                    | ArrayDecl(_, id_ref, _, _, _)  -> map_identifier id_ref
                     | _ -> ()
                 | DeclNop -> ()
             | SExpression(sexpr) ->
@@ -303,7 +303,7 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
             match decl with
             | ScalarDecl(flags, id, None, Some(e)) ->
                 if flags.HasFlag ScalarFlags.CONSTANT && not (is_const_expression e) then
-                    printfn "Error: Expected constant value for '%s'" id
+                    printfn "Error: Expected constant value for '%s'" id.Identifier
 
                 match infer_scalar_type id_ref e with
                 | Some(i) ->
@@ -322,9 +322,9 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                             | Some(s) ->
                                 if s <> a.Length then
                                     // @Todo: Clearer message once error system is implememted
-                                    printfn "Error: %s declared with size %i will have size %i." id s a.Length
+                                    printfn "Error: %s declared with size %i will have size %i." id.Identifier s a.Length
                             | None ->
-                                printfn "Error: A constant value is expected %s." id
+                                printfn "Error: A constant value is expected %s." id.Identifier
                         a.Length
                     | None ->
                         a.Length
@@ -380,6 +380,7 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
         scan_block block
 
     and scan_expression expr =
+
         let check_index_type e =
             let index_type = scan_expression e
             // Array indexes must be integers
@@ -403,9 +404,9 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                     if flags.HasFlag(ScalarFlags.CONSTANT) then
                         printfn "Error: Cannot reassign constant '%s'." id.Identifier
                 | ArrayDecl(_, id, _, _, _) ->
-                    printfn "Error: Cannot reassign array '%s'" id // @Temporary
+                    printfn "Error: Cannot reassign array '%s'" id.Identifier // @Temporary
                 | ProcedureDecl(_, id, _, _, _) ->
-                    printfn "Error: Cannot reassign procedure '%s'" id
+                    printfn "Error: Cannot reassign procedure '%s'" id.Identifier
 
                 typeof_id
             | ArrayAssignExpression(id, e1, e2) ->
