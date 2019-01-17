@@ -89,16 +89,30 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
     let mutable label_index = 0
     let globals = new List<DataSymbol>()
 
+    let alloc_label() =
+        let result: Label = sprintf "_L%i" label_index
+        label_index <- label_index + 1
+        result
+
+    let alloc_global label size value =
+        globals.Add({ Name = label; Type = size; Value = value })
+
+    /// @Todo: If a global constant is already defined with identical size and value
+    /// return a pointer to in instead of defining a new global.
+    /// This is mainly used for string literals which cannot change during
+    /// runtime.
+
+    let alloc_global_ptr size value =
+        let label = alloc_label()
+        alloc_global (Some ("@" + label)) size value
+        // Create pointer to value in global section
+        Var { Name = "@" + label; Type = { Type = Int; IsArray = false } }
+
     let compile_proc (name, parameters, return_type, block, semantics: SemanticAnalysisResult) =
         let body = new List<Instruction>()
         let mutable locals = 0
         let mutable temp_index = 0
         let current_while_end_label = Stack<Label>()
-
-        let alloc_label() =
-            let result: Label = sprintf "_L%i" label_index
-            label_index <- label_index + 1
-            result
 
         let alloc_temp() =
             let result = temp_index
@@ -110,20 +124,6 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
 
         let alloc_local() =
             locals <- locals + 1
-
-        let alloc_global label size value =
-            globals.Add({ Name = label; Type = size; Value = value })
-
-        /// @Todo: If a global constant is already defined with identical size and value
-        /// return a pointer to in instead of defining a new global.
-        /// This is mainly used for string literals which cannot change during
-        /// runtime.
-
-        let alloc_global_ptr size value =
-            let label = alloc_label()
-            alloc_global (Some ("@" + label)) size value
-            // Create pointer to value in global section
-            Var { Name = "@" + label; Type = { Type = Int; IsArray = false } }
 
         let emit i = (body.Add i)
 
@@ -414,6 +414,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
         }
 
     let procs = new List<Proc>()
+    let mutable init_proc = List.empty<Statement>
 
     let compile_decl decl =
         match decl with
@@ -421,10 +422,17 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             match d with
             | ProcedureDecl(_, id, p, t, stmt) ->
                 procs.Add(compile_proc(id.Identifier, p, t, stmt, semantics))
-            | _ -> () // @Todo handle global variables
+            | ScalarDecl(_, id_ref, Some(t), None) ->
+                alloc_global (Some(id_ref.Identifier)) MachineType.WORD "0"
+                ()
+            | ScalarDecl(_, id_ref, _, _)
+            | ArrayDecl(_, id_ref, _, _, _) ->
+                alloc_global (Some(id_ref.Identifier)) MachineType.WORD "0"
+                init_proc <- init_proc @ [Declaration decl]
         | DeclNop -> ()
 
     program |> List.iter compile_decl
+    procs.Add(compile_proc("__init__", [], Void, init_proc, semantics))
 
     {
         Globals = Seq.toList globals
@@ -475,7 +483,7 @@ let tac_to_text (ir: IR) =
             function
             | Some n -> n + ":"
             | None -> ""
-        result <- sprintf "%s%s%s%s\n" result (name g.Name) (g.Type.ToString()) g.Value)
+        result <- sprintf "%s%s %s %s\n" result (name g.Name) (g.Type.ToString()) g.Value)
 
     ir.Procedures |> List.iter (fun proc ->
         result <- sprintf "%s%s:\n" result proc.Name

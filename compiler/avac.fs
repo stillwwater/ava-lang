@@ -1,4 +1,4 @@
-﻿open SemanticAnalysis
+open SemanticAnalysis
 open System.IO
 open System.Diagnostics
 open Microsoft.FSharp.Text.Lexing
@@ -34,21 +34,27 @@ let main(args) =
 
     let program = parsefile args.[0]
     let sem_analysis = SemanticAnalysis.analyse program
+    let tac = IRCompiler.compile(program, sem_analysis)
 
     sw.Stop()
+    printfn "compiled %s in %.2f seconds" args.[0] (sw.Elapsed.TotalSeconds)
 
-    if args.Length > 1 then
-        if args.[1] = "-d" then
-            print_debug_info program sem_analysis
-        elif args.[1] = "-rd" then
+    // @Temporary: handling command line options to print info
+    let handle_option opt =
+        match opt with
+        | "-d" -> print_debug_info program sem_analysis
+        | "-sl" ->
+            printfn "Symbol lookup. ^C to exit."
             while true do
-                printf "symbols > "
+                printf "symbols> "
                 let search = System.Console.ReadLine()
 
                 if search <> "" then
                     printfn "%A" (debug_symbol_search sem_analysis search)
-        elif args.[1] = "-ast" then
-            printfn "%A" program
+        | "-ast" -> printfn "%A" program
+        | "-irl" -> printfn "%A" tac
+        | "-ir"  -> tac |> IRCompiler.tac_to_text |> printfn "%s"
+        | _ -> printfn "Unknown command line option %s." opt
 
-    printfn "compiled %s in %.2f seconds" args.[0] (sw.Elapsed.TotalSeconds)
+    Seq.skip 1 args |> Seq.toList |> List.iter handle_option
     0
