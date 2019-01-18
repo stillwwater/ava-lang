@@ -1,5 +1,5 @@
 # 1 "lexer.l"
-
+ 
 module Lexer
 
 open Microsoft.FSharp.Text.Lexing
@@ -18,8 +18,8 @@ let lexeme lexbuf =
     LexBuffer<char>.LexemeString lexbuf
 
 # 20 "lexer.fs"
-let trans : uint16[] array =
-    [|
+let trans : uint16[] array = 
+    [| 
     (* State 0 *)
      [| 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 1us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 2us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 3us; 65535us; |];
     (* State 1 *)
@@ -45,7 +45,7 @@ let trans : uint16[] array =
     (* State 11 *)
      [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 132us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 132us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
     (* State 12 *)
-     [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 130us; 65535us; 65535us; 15us; 15us; 15us; 15us; 15us; 15us; 15us; 15us; 15us; 15us; 65535us; 65535us; 65535us; 65535us; 131us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
+     [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 130us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 131us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
     (* State 13 *)
      [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 128us; 65535us; 65535us; 129us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
     (* State 14 *)
@@ -286,10 +286,10 @@ let trans : uint16[] array =
      [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
     (* State 132 *)
      [| 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 132us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 132us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; |];
-    |]
+    |] 
 let actions : uint16[] = [|65535us; 0us; 1us; 2us; 2us; 65535us; 0us; 1us; 1us; 0us; 65535us; 0us; 40us; 2us; 65535us; 4us; 5us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 30us; 31us; 32us; 33us; 34us; 35us; 39us; 41us; 42us; 43us; 47us; 49us; 50us; 51us; 52us; 53us; 54us; 55us; 56us; 48us; 45us; 46us; 44us; 36us; 37us; 30us; 30us; 30us; 30us; 30us; 25us; 21us; 30us; 30us; 30us; 19us; 30us; 30us; 30us; 30us; 30us; 30us; 28us; 22us; 30us; 17us; 30us; 18us; 30us; 15us; 30us; 14us; 13us; 23us; 30us; 30us; 30us; 20us; 30us; 12us; 30us; 11us; 30us; 30us; 30us; 30us; 30us; 29us; 30us; 30us; 30us; 30us; 27us; 30us; 10us; 30us; 30us; 30us; 30us; 26us; 30us; 9us; 30us; 30us; 30us; 8us; 30us; 16us; 24us; 7us; 30us; 30us; 6us; 65535us; 4us; 3us; 3us; 2us; 65535us; 1us; 38us; 0us; |]
 let _fslex_tables = Microsoft.FSharp.Text.Lexing.UnicodeTables.Create(trans,actions)
-let rec _fslex_dummy () = _fslex_dummy()
+let rec _fslex_dummy () = _fslex_dummy() 
 (* Rule tokenstream *)
 and tokenstream  (lexbuf : Microsoft.FSharp.Text.Lexing.LexBuffer<_>) = _fslex_tokenstream  10 lexbuf
 (* Rule comment *)
@@ -299,335 +299,335 @@ and read_str ignorequote (lexbuf : Microsoft.FSharp.Text.Lexing.LexBuffer<_>) = 
 (* Rule tokenstream *)
 and _fslex_tokenstream  _fslex_state lexbuf =
   match _fslex_tables.Interpret(_fslex_state,lexbuf) with
-  | 0 -> (
+  | 0 -> ( 
 # 27 "lexer.l"
-                                   tokenstream lexbuf
+                                   tokenstream lexbuf 
 # 305 "lexer.fs"
           )
-  | 1 -> (
+  | 1 -> ( 
 # 28 "lexer.l"
-                                   comment lexbuf
+                                   comment lexbuf 
 # 310 "lexer.fs"
           )
-  | 2 -> (
+  | 2 -> ( 
 # 29 "lexer.l"
-                                   set_newline lexbuf |> ignore; EOL
+                                   set_newline lexbuf |> ignore; EOL 
 # 315 "lexer.fs"
           )
-  | 3 -> (
+  | 3 -> ( 
 # 31 "lexer.l"
-                                                 FLOAT_LITERAL(float32(lexeme lexbuf))
+                                           FLOAT_LITERAL(float32(lexeme lexbuf)) 
 # 320 "lexer.fs"
           )
-  | 4 -> (
+  | 4 -> ( 
 # 32 "lexer.l"
-                                                 INT_LITERAL(int(lexeme lexbuf))
+                                           INT_LITERAL(int(lexeme lexbuf)) 
 # 325 "lexer.fs"
           )
-  | 5 -> (
+  | 5 -> ( 
 # 35 "lexer.l"
-
+                          
                        str_buffer.Clear() |> ignore
                        read_str false lexbuf
-
+                   
 # 333 "lexer.fs"
           )
-  | 6 -> (
+  | 6 -> ( 
 # 41 "lexer.l"
-                                  KW_VOID
+                                  KW_VOID 
 # 338 "lexer.fs"
           )
-  | 7 -> (
+  | 7 -> ( 
 # 42 "lexer.l"
-                                  KW_INT
+                                  KW_INT 
 # 343 "lexer.fs"
           )
-  | 8 -> (
+  | 8 -> ( 
 # 43 "lexer.l"
-                                  KW_FLOAT
+                                  KW_FLOAT 
 # 348 "lexer.fs"
           )
-  | 9 -> (
+  | 9 -> ( 
 # 44 "lexer.l"
-                                  KW_BYTE
+                                  KW_BYTE 
 # 353 "lexer.fs"
           )
-  | 10 -> (
+  | 10 -> ( 
 # 45 "lexer.l"
-                                  KW_CHAR
+                                  KW_CHAR 
 # 358 "lexer.fs"
           )
-  | 11 -> (
+  | 11 -> ( 
 # 46 "lexer.l"
-                                  KW_STRING
+                                  KW_STRING 
 # 363 "lexer.fs"
           )
-  | 12 -> (
+  | 12 -> ( 
 # 47 "lexer.l"
                                   KW_TEXT
 # 368 "lexer.fs"
           )
-  | 13 -> (
+  | 13 -> ( 
 # 48 "lexer.l"
-                                  KW_OR
+                                  KW_OR 
 # 373 "lexer.fs"
           )
-  | 14 -> (
+  | 14 -> ( 
 # 49 "lexer.l"
-                                  KW_AND
+                                  KW_AND 
 # 378 "lexer.fs"
           )
-  | 15 -> (
+  | 15 -> ( 
 # 50 "lexer.l"
-                                  KW_NOT
+                                  KW_NOT 
 # 383 "lexer.fs"
           )
-  | 16 -> (
+  | 16 -> ( 
 # 51 "lexer.l"
-                                  KW_IF
+                                  KW_IF 
 # 388 "lexer.fs"
           )
-  | 17 -> (
+  | 17 -> ( 
 # 52 "lexer.l"
-                                  KW_ELSE
+                                  KW_ELSE 
 # 393 "lexer.fs"
           )
-  | 18 -> (
+  | 18 -> ( 
 # 53 "lexer.l"
-                                  KW_ELSIF
+                                  KW_ELSIF 
 # 398 "lexer.fs"
           )
-  | 19 -> (
+  | 19 -> ( 
 # 54 "lexer.l"
-                                  KW_WHILE
+                                  KW_WHILE 
 # 403 "lexer.fs"
           )
-  | 20 -> (
+  | 20 -> ( 
 # 55 "lexer.l"
-                                  KW_THEN
+                                  KW_THEN 
 # 408 "lexer.fs"
           )
-  | 21 -> (
+  | 21 -> ( 
 # 56 "lexer.l"
-                                  KW_DO
+                                  KW_DO 
 # 413 "lexer.fs"
           )
-  | 22 -> (
+  | 22 -> ( 
 # 57 "lexer.l"
-                                  KW_END
+                                  KW_END 
 # 418 "lexer.fs"
           )
-  | 23 -> (
+  | 23 -> ( 
 # 58 "lexer.l"
-                                  KW_OF
+                                  KW_OF 
 # 423 "lexer.fs"
           )
-  | 24 -> (
+  | 24 -> ( 
 # 59 "lexer.l"
-                                  KW_IS
+                                  KW_IS 
 # 428 "lexer.fs"
           )
-  | 25 -> (
+  | 25 -> ( 
 # 60 "lexer.l"
-                                  KW_RETURN
+                                  KW_RETURN 
 # 433 "lexer.fs"
           )
-  | 26 -> (
+  | 26 -> ( 
 # 61 "lexer.l"
-                                  KW_BREAK
+                                  KW_BREAK 
 # 438 "lexer.fs"
           )
-  | 27 -> (
+  | 27 -> ( 
 # 62 "lexer.l"
-                                  KW_CONTINUE
+                                  KW_CONTINUE 
 # 443 "lexer.fs"
           )
-  | 28 -> (
+  | 28 -> ( 
 # 63 "lexer.l"
-                                  KW_EXPORT
+                                  KW_EXPORT 
 # 448 "lexer.fs"
           )
-  | 29 -> (
+  | 29 -> ( 
 # 65 "lexer.l"
-                                  KW_COUNT
+                                  KW_COUNT 
 # 453 "lexer.fs"
           )
-  | 30 -> (
+  | 30 -> ( 
 # 66 "lexer.l"
-                                      IDENT(lexeme lexbuf)
+                                      IDENT(lexeme lexbuf) 
 # 458 "lexer.fs"
           )
-  | 31 -> (
+  | 31 -> ( 
 # 68 "lexer.l"
-                                  COMMA
+                                  COMMA 
 # 463 "lexer.fs"
           )
-  | 32 -> (
+  | 32 -> ( 
 # 69 "lexer.l"
-                                  EOL
+                                  EOL 
 # 468 "lexer.fs"
           )
-  | 33 -> (
+  | 33 -> ( 
 # 70 "lexer.l"
-                                  COLON
+                                  COLON 
 # 473 "lexer.fs"
           )
-  | 34 -> (
+  | 34 -> ( 
 # 71 "lexer.l"
-                                  DOT
+                                  DOT 
 # 478 "lexer.fs"
           )
-  | 35 -> (
+  | 35 -> ( 
 # 72 "lexer.l"
-                                  SINGLE_EQUALS
+                                  SINGLE_EQUALS 
 # 483 "lexer.fs"
           )
-  | 36 -> (
+  | 36 -> ( 
 # 73 "lexer.l"
-                                  DOUBLE_COLON
+                                  DOUBLE_COLON 
 # 488 "lexer.fs"
           )
-  | 37 -> (
+  | 37 -> ( 
 # 74 "lexer.l"
-                                  COLON_EQUALS
+                                  COLON_EQUALS 
 # 493 "lexer.fs"
           )
-  | 38 -> (
+  | 38 -> ( 
 # 75 "lexer.l"
-                                  RARROW
+                                  RARROW 
 # 498 "lexer.fs"
           )
-  | 39 -> (
+  | 39 -> ( 
 # 76 "lexer.l"
-                                  PLUS
+                                  PLUS 
 # 503 "lexer.fs"
           )
-  | 40 -> (
+  | 40 -> ( 
 # 77 "lexer.l"
-                                  MINUS
+                                  MINUS 
 # 508 "lexer.fs"
           )
-  | 41 -> (
+  | 41 -> ( 
 # 78 "lexer.l"
-                                  ASTERISK
+                                  ASTERISK 
 # 513 "lexer.fs"
           )
-  | 42 -> (
+  | 42 -> ( 
 # 79 "lexer.l"
-                                  FSLASH
+                                  FSLASH 
 # 518 "lexer.fs"
           )
-  | 43 -> (
+  | 43 -> ( 
 # 80 "lexer.l"
-                                  PERCENT
+                                  PERCENT 
 # 523 "lexer.fs"
           )
-  | 44 -> (
+  | 44 -> ( 
 # 81 "lexer.l"
-                                  DOUBLE_EQUALS
+                                  DOUBLE_EQUALS 
 # 528 "lexer.fs"
           )
-  | 45 -> (
+  | 45 -> ( 
 # 82 "lexer.l"
-                                  LESS_GREATER
+                                  LESS_GREATER 
 # 533 "lexer.fs"
           )
-  | 46 -> (
+  | 46 -> ( 
 # 83 "lexer.l"
-                                  LESS_EQUALS
+                                  LESS_EQUALS 
 # 538 "lexer.fs"
           )
-  | 47 -> (
+  | 47 -> ( 
 # 84 "lexer.l"
-                                  LESS
+                                  LESS 
 # 543 "lexer.fs"
           )
-  | 48 -> (
+  | 48 -> ( 
 # 85 "lexer.l"
-                                  GREATER_EQUALS
+                                  GREATER_EQUALS 
 # 548 "lexer.fs"
           )
-  | 49 -> (
+  | 49 -> ( 
 # 86 "lexer.l"
-                                  GREATER
+                                  GREATER 
 # 553 "lexer.fs"
           )
-  | 50 -> (
+  | 50 -> ( 
 # 87 "lexer.l"
-                                  AMP
+                                  AMP 
 # 558 "lexer.fs"
           )
-  | 51 -> (
+  | 51 -> ( 
 # 88 "lexer.l"
-                                  LPAREN
+                                  LPAREN 
 # 563 "lexer.fs"
           )
-  | 52 -> (
+  | 52 -> ( 
 # 89 "lexer.l"
-                                  RPAREN
+                                  RPAREN 
 # 568 "lexer.fs"
           )
-  | 53 -> (
+  | 53 -> ( 
 # 90 "lexer.l"
-                                  LBRACKET
+                                  LBRACKET 
 # 573 "lexer.fs"
           )
-  | 54 -> (
+  | 54 -> ( 
 # 91 "lexer.l"
-                                  RBRACKET
+                                  RBRACKET 
 # 578 "lexer.fs"
           )
-  | 55 -> (
+  | 55 -> ( 
 # 92 "lexer.l"
-                                  HASH
+                                  HASH 
 # 583 "lexer.fs"
           )
-  | 56 -> (
+  | 56 -> ( 
 # 93 "lexer.l"
-                                  EOF
+                                  EOF 
 # 588 "lexer.fs"
           )
   | _ -> failwith "tokenstream"
 (* Rule comment *)
 and _fslex_comment  _fslex_state lexbuf =
   match _fslex_tables.Interpret(_fslex_state,lexbuf) with
-  | 0 -> (
+  | 0 -> ( 
 # 97 "lexer.l"
-                                       tokenstream lexbuf |> ignore; EOL
+                                       tokenstream lexbuf |> ignore; EOL 
 # 597 "lexer.fs"
           )
-  | 1 -> (
+  | 1 -> ( 
 # 98 "lexer.l"
-                                       comment lexbuf
+                                       comment lexbuf 
 # 602 "lexer.fs"
           )
   | _ -> failwith "comment"
 (* Rule read_str *)
 and _fslex_read_str ignorequote _fslex_state lexbuf =
   match _fslex_tables.Interpret(_fslex_state,lexbuf) with
-  | 0 -> (
+  | 0 -> ( 
 # 102 "lexer.l"
-
+                          
                        if ignorequote then
                            str_buffer.Append("\"") |> ignore
                            read_str false lexbuf
                        else
                            // End of string
                            STRING_LITERAL(str_buffer.ToString())
-
+                   
 # 618 "lexer.fs"
           )
-  | 1 -> (
+  | 1 -> ( 
 # 110 "lexer.l"
-                               read_str true lexbuf
+                               read_str true lexbuf 
 # 623 "lexer.fs"
           )
-  | 2 -> (
+  | 2 -> ( 
 # 111 "lexer.l"
-
+                                    
                        str_buffer.Append(lexeme lexbuf) |> ignore
                        read_str false lexbuf
-
+                   
 # 631 "lexer.fs"
           )
   | _ -> failwith "read_str"

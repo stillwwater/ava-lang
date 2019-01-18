@@ -28,9 +28,9 @@ rule tokenstream =
     | "--"        { comment lexbuf }
     | newline+    { set_newline lexbuf |> ignore; EOL }           // Register new line
     // Literals
-    | ['-']?digit+('.'digit+)   { FLOAT_LITERAL(float32(lexeme lexbuf)) }
-    | ['-']?digit+              { INT_LITERAL(int(lexeme lexbuf)) }
-    //| digit+['b']               { BYTE_LITERAL(byte(lexeme lexbuf)) }
+    | digit+('.'digit+)   { FLOAT_LITERAL(float32(lexeme lexbuf)) }
+    | digit+              { INT_LITERAL(int(lexeme lexbuf)) }
+    //| digit+['b']       { BYTE_LITERAL(byte(lexeme lexbuf)) }
     // @Todo hex
     | '"' {
         str_buffer.Clear() |> ignore

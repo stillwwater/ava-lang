@@ -307,6 +307,7 @@ relation: equation { $1 }
 
 relational: DOUBLE_EQUALS { Ast.Eq }
     | LESS_EQUALS         { Ast.LtEq }
+    | LESS_GREATER        { Ast.NotEq }
     | LESS                { Ast.Lt }
     | GREATER_EQUALS      { Ast.GtEq }
     | GREATER             { Ast.Gt }
