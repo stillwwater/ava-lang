@@ -3,6 +3,7 @@ module IRCompiler
 open Ast
 open System.Collections.Generic
 open SemanticAnalysis
+open System.Linq.Expressions
 
 type IR =
     {
@@ -107,6 +108,67 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
         alloc_global (Some ("@" + label)) size value
         // Create pointer to value in global section
         Var { Name = "@" + label; Type = { Type = Int; IsArray = false } }
+
+    ///
+    /// Attempt to evaluate expressions composed of constants at compile time.
+    ///
+    let rec const_fold e =
+        // @Todo: - Handle symbols declared as constants
+        //        - Handle non-integer types
+        let make_int_const x =
+            Some(Ast.LiteralExpression(Ast.IntLiteral(x)))
+
+        match e with
+        | BinaryExpression(l, op, r) ->
+            let a = const_fold l
+            let b = const_fold r
+
+            let fold_binary =
+                function
+                | LiteralExpression(l1), LiteralExpression(l2) ->
+                    match l1, l2 with
+                    | IntLiteral(i1), IntLiteral(i2) ->
+                        match op with
+                        | Ast.Eq    -> make_int_const(if i1 = i2 then 1 else 0)
+                        | Ast.Lt    -> make_int_const(if i1 < i2 then 1 else 0)
+                        | Ast.Gt    -> make_int_const(if i1 > i2 then 1 else 0)
+                        | Ast.LtEq  -> make_int_const(if i1 <= i2 then 1 else 0)
+                        | Ast.GtEq  -> make_int_const(if i1 >= i2 then 1 else 0)
+                        | Ast.NotEq -> make_int_const(if i1 <> i2 then 1 else 0)
+                        | Ast.Xor   -> make_int_const(i1 ^^^ i2)
+                        | Ast.Add   -> make_int_const(i1 + i2)
+                        | Ast.Sub   -> make_int_const(i1 - i2)
+                        | Ast.Mul   -> make_int_const(i1 * i2)
+                        | Ast.Div   -> make_int_const(i1 / i2)
+                        | Ast.Mod   -> make_int_const(i1 % i2)
+                        // Todo bitwise and conditionals
+                        | _ -> None
+                    | _ -> None
+                | _ -> None
+
+            match fold_binary(a, b) with
+            | Some(c) -> c
+            | None -> Ast.BinaryExpression(a, op, b)
+        | UnaryExpression(op, r) ->
+            let a = const_fold r
+
+            let fold_unary =
+                function
+                | LiteralExpression(l) ->
+                    match l with
+                    | IntLiteral(i) ->
+                        match op with
+                        | Ast.LogicalNot -> make_int_const(if i = 0 then 1 else 0)
+                        | Ast.BitwiseNot -> make_int_const(~~~i)
+                        | Negate         -> make_int_const(-i)
+                        | Identity       -> make_int_const(+i)
+                    | _ -> None
+                | _ -> None
+
+            match fold_unary(a) with
+            | Some(c) -> c
+            | None -> Ast.UnaryExpression(op, a)
+        | _ -> e // The expression cannot be evaluate at compile time.
 
     let compile_proc (name, parameters, return_type, block, semantics: SemanticAnalysisResult) =
         let body = new List<Instruction>()
@@ -226,7 +288,9 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
 
             result
 
-        and compile_expression e =
+        and compile_expression expr =
+            let e = const_fold expr
+
             match e with
             | BinaryExpression(lhs, op, rhs) ->
                 compile_binaryexpr(lhs, op, rhs)
@@ -264,7 +328,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                     alloc_global None MachineType.WORD (s.Length.ToString()) // String capacity
                     alloc_global None MachineType.WORD (s.Length.ToString()) // String length
                     alloc_global_ptr MachineType.WORD (sprintf "\"%s\"" s)
-                | _ -> Nop // Todo other types
+                | _ -> Nop // @Todo other types
             | IdentifierExpression(id_ref) ->
                 alloc_var id_ref
             | ArrayIdentifierExpression(id_ref, e) ->
