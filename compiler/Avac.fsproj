@@ -15,6 +15,7 @@
     </FsLex>
     <Compile Include="lexer.fs" />
     <Compile Include="semantic_analysis.fs" />
+    <Compile Include="asm.fs" />
     <Compile Include="ir_compiler.fs" />
     <Compile Include="avac.fs" />
   </ItemGroup>
