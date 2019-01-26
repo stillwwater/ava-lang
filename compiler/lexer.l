@@ -21,6 +21,8 @@ let digit = ['0'-'9']
 
 let whitespace = [' ' '\t']
 let newline = ('\n' | '\r' '\n')
+let hexint = "0"['x' 'X']['0'-'9' 'a'-'f' 'A'-'F']+
+let binint = "0"['b' 'B']['0' '1']+
 
 rule tokenstream =
     parse
@@ -28,6 +30,8 @@ rule tokenstream =
     | "--"        { comment lexbuf }
     | newline+    { set_newline lexbuf |> ignore; EOL }           // Register new line
     // Literals
+    | hexint          { INT_LITERAL(Convert.ToInt32(lexeme lexbuf, 16))}
+    | binint          { INT_LITERAL(Convert.ToInt32(lexeme lexbuf, 2))}
     | digit+('.'digit+)   { FLOAT_LITERAL(float32(lexeme lexbuf)) }
     | digit+              { INT_LITERAL(int(lexeme lexbuf)) }
     //| digit+['b']       { BYTE_LITERAL(byte(lexeme lexbuf)) }
