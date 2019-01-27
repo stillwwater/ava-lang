@@ -3,11 +3,10 @@ module IRCompiler
 open Ast
 open System.Collections.Generic
 open SemanticAnalysis
-open System.Linq.Expressions
 
 type IR =
     {
-        Globals    : DataSymbol list
+        Globals    : GlobalSymbol list
         Procedures : Proc list
     }
 
@@ -18,35 +17,28 @@ and Proc =
         Parameters : Parameters
         Body       : Instruction list
         Locals     : int
+        EndLabel   : Label option
+        IsExtern   : bool
     }
 
 and Symbol =
     {
-        Name : string
+        Name : IdentifierRef
         Type : VariableType
     }
 
-and DataSymbol =
+and GlobalSymbol =
     {
-        Name  : Label option
-        Type  : MachineType
-        Value : string
+        Data   : Asm.Data
+        Symbol : Symbol option
     }
 
-and MachineType =
-    | BYTE
-    | WORD
-
-    override x.ToString() =
-        match x with
-        | BYTE -> ".byte"
-        | WORD -> ".word"
-
 and Instruction =
-    | Lod of Symbol
-    | Sto of Symbol
     | Lab of Label
     | LoadRef of Operand * Operand
+    | StoreRef of Operand * Operand
+    | ArrayLoad of Operand * Operand * Operand // symbol := array[index]
+    | ArrayStore of Operand * Operand * Operand // array[index] := symbol
     | Goto of Label
     | Copy of Operand * Operand
     | Add of Operand * Operand * Operand
@@ -76,38 +68,36 @@ and Instruction =
     | Free of Operand
 
 and Operand =
-    | Const of int
+    | Const of int // @Todo type of constant int * Type
     | Var of Symbol
-    | Temp of int
-    | Ref of Symbol
+    | Ptr of Symbol
     | Nop
 
 and Label = string
 
-and StackOffset = int
-
 let compile (program: Program, semantics: SemanticAnalysisResult) =
     let mutable label_index = 0
-    let globals = new List<DataSymbol>()
+    let globals = new List<GlobalSymbol>()
 
     let alloc_label() =
         let result: Label = sprintf "_L%i" label_index
         label_index <- label_index + 1
         result
 
-    let alloc_global label size value =
-        globals.Add({ Name = label; Type = size; Value = value })
+    let alloc_global label value symbol =
+        globals.Add({ Data = { Label = label; Value = value }; Symbol = symbol})
 
     /// @Todo: If a global constant is already defined with identical size and value
     /// return a pointer to in instead of defining a new global.
     /// This is mainly used for string literals which cannot change during
     /// runtime.
 
-    let alloc_global_ptr size value =
+    let alloc_global_ptr value t =
         let label = alloc_label()
-        alloc_global (Some ("@" + label)) size value
+        let sym = { Name = { Identifier = "@" + label }; Type = t }
+        alloc_global (Some ("@" + label)) value (Some sym)
         // Create pointer to value in global section
-        Var { Name = "@" + label; Type = { Type = Int; IsArray = false } }
+        Ptr sym
 
     ///
     /// Attempt to evaluate expressions composed of constants at compile time.
@@ -170,19 +160,38 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             | None -> Ast.UnaryExpression(op, a)
         | _ -> e // The expression cannot be evaluate at compile time.
 
-    let compile_proc (name, parameters, return_type, block, semantics: SemanticAnalysisResult) =
+    let compile_proc (flags, name, parameters, return_type, block, semantics) =
         let body = new List<Instruction>()
         let mutable locals = 0
         let mutable temp_index = 0
         let current_while_end_label = Stack<Label>()
 
         let alloc_temp() =
-            let result = temp_index
+            let id_ref = { Identifier = sprintf "%%R%i" temp_index }
             temp_index <- temp_index + 1
-            Temp(result)
+            Var({ Name = id_ref; Type = scalar_type Int}) // @Todo: types
 
         let alloc_var id_ref =
-            Var { Name = id_ref.Identifier; Type = semantics.SymbolTable.GetIdentifierType id_ref }
+            let parent_id =
+                match semantics.SymbolTable.[id_ref] with
+                | ScalarDecl(_, id, _, _)
+                | ArrayDecl(_, id, _, _, _) -> id
+                | ProcedureDecl(_) ->
+                    printfn "FATAL: Procedure declarations cannot be variables."
+                    id_ref
+
+            Var { Name = parent_id; Type = semantics.SymbolTable.GetIdentifierType id_ref }
+
+        let alloc_ptr id_ref =
+            let parent_id =
+                match semantics.SymbolTable.[id_ref] with
+                | ScalarDecl(_, id, _, _)
+                | ArrayDecl(_, id, _, _, _) -> id
+                | ProcedureDecl(_) ->
+                    printfn "FATAL: Procedure pointers not yet supported."
+                    id_ref
+
+            Ptr { Name = parent_id; Type = scalar_type Int }
 
         let alloc_local() =
             locals <- locals + 1
@@ -193,6 +202,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             function
             | (lhs, Ast.CondOr, rhs) ->
                 let result = alloc_temp()
+                printfn "%A" lhs
                 let a_false = alloc_label()
                 let end_label = alloc_label()
 
@@ -265,9 +275,9 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             | Ast.Eq    -> emit(Ceq(result, a, b))
             | Ast.NotEq -> emit(Cne(result, a, b))
             | Ast.Lt    -> emit(Clt(result, a, b))
-            | Ast.LtEq  -> emit(Clt(result, a, b))
-            | Ast.Gt    -> emit(Clt(result, a, b))
-            | Ast.GtEq  -> emit(Clt(result, a, b))
+            | Ast.LtEq  -> emit(Cle(result, a, b))
+            | Ast.Gt    -> emit(Cgt(result, a, b))
+            | Ast.GtEq  -> emit(Cge(result, a, b))
             | Ast.Xor   -> emit(BitXor(result, a, b))
             // @Todo: other bitwise operators not supported by the parser yet
             | CondAnd
@@ -289,6 +299,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             result
 
         and compile_expression expr =
+            let expr_type = semantics.ExpressionTable.[expr]
             let e = const_fold expr
 
             match e with
@@ -305,10 +316,11 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 let a = alloc_var id_ref
                 let b = compile_expression e
                 let i = compile_expression index
-                let offset = alloc_temp()
-                emit(Add(offset, a, i))
-                emit(Copy(offset, b))
-                offset
+                //let offset = alloc_temp()
+                //emit(Add(offset, a, i)) @Cleanup
+                //emit(StoreRef(offset, b))
+                emit(ArrayStore(a, i, b))
+                a
             | ProcedureCallExpression(id_ref, args) ->
                 let mutable argc = 0
 
@@ -316,6 +328,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                     argc <- i + 1
                     emit(PushParam(compile_expression x)))
 
+                // @Todo: return array type
                 let a = alloc_temp()
                 emit(Call(a, id_ref.Identifier))
                 emit(FreeParams(argc))
@@ -325,19 +338,24 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 | IntLiteral(i) ->
                     Const i
                 | StringLiteral(s) ->
-                    alloc_global None MachineType.WORD (s.Length.ToString()) // String capacity
-                    alloc_global None MachineType.WORD (s.Length.ToString()) // String length
-                    alloc_global_ptr MachineType.WORD (sprintf "\"%s\"" s)
+                    alloc_global None (Asm.Encode.i32_to_bytes s.Length) None // String capacity
+                    alloc_global None (Asm.Encode.i32_to_bytes s.Length) None // String length
+                    alloc_global_ptr (Asm.Encode.str_to_utf32 s) (scalar_type String)
+                | TextLiteral(s) ->
+                    // @Todo: word align
+                    alloc_global None (Asm.Encode.i32_to_bytes (s.Length >>> 2)) None // String capacity
+                    alloc_global None (Asm.Encode.i32_to_bytes (s.Length >>> 2)) None // String length
+                    alloc_global_ptr (Asm.Encode.str_to_utf8 s) (scalar_type String)
                 | _ -> Nop // @Todo other types
             | IdentifierExpression(id_ref) ->
                 alloc_var id_ref
             | ArrayIdentifierExpression(id_ref, e) ->
                 let a = alloc_var id_ref
                 let i = compile_expression e
-                let offset = alloc_temp()
-                emit(Add(offset, a, i))
+                //let offset = alloc_temp()
+                //emit(Add(offset, a, i)) // @Cleanup
                 let value = alloc_temp()
-                emit(LoadRef(value, offset))
+                emit(ArrayLoad(value, a, i))
                 value
             | _ -> Nop
 
@@ -356,24 +374,26 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                         emit(Copy(a, b))
                         alloc_local()
                         a
-                    | ScalarDecl(_) ->
+                    | ScalarDecl(_, id_ref, _, None) ->
                         // Local without assignmet
+                        let a = alloc_ptr id_ref
+                        emit(Copy(a, Const(0)))
                         alloc_local()
-                        Nop
+                        a
                     | ArrayDecl(_, id_ref, Some e, _, None) ->
-                        let a = alloc_var id_ref
+                        let a = alloc_ptr id_ref
                         let size = compile_expression e
                         emit(Malloc(a, size))
                         alloc_local()
                         Nop
                     | ArrayDecl(_, id_ref, None, _, None) ->
-                        let a = alloc_var id_ref
+                        let a = alloc_ptr id_ref
                         let size = Const(4) // @Todo: cell size
                         emit(Malloc(a, size))
                         alloc_local()
                         Nop
                     | ArrayDecl(_, id_ref, _, _, Some tup) ->
-                        let a = alloc_var id_ref
+                        let a = alloc_ptr id_ref
                         let size =
                             let sym = semantics.SymbolTable.[id_ref]
                             match sym with
@@ -396,11 +416,12 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                             let offset =
                                 if i > 0 then
                                     // offset := a[i]
-                                    let o = alloc_temp()
-                                    emit(Add(o, a, Const(i)))
-                                    o
-                                else a // a[0] == a
-                            emit(Copy(offset, r)))
+                                    //let o = alloc_temp()
+                                    // @Cleanup
+                                    //emit(Add(o, a, Const(i)))
+                                    Const(i)
+                                else Const(0) // a[0] == a
+                            emit(ArrayStore(a, offset, r)))
                         Nop
                     | _ -> Nop
                 | DeclNop -> Nop
@@ -467,7 +488,14 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 Nop
             | _ -> Nop
 
-        compile_block block |> ignore
+        let is_extern = flags = (ProcFlags.EXTERN)
+        let mutable end_label = None
+
+        if not is_extern then
+            compile_block block |> ignore
+            let label = alloc_label()
+            emit(Lab(label))
+            end_label <- Some label
 
         {
             Name       = name
@@ -475,6 +503,8 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             Parameters = parameters
             Body       = Seq.toList body
             Locals     = locals
+            EndLabel   = end_label
+            IsExtern   = is_extern
         }
 
     let procs = new List<Proc>()
@@ -484,73 +514,86 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
         match decl with
         | VariableDecl(d) ->
             match d with
-            | ProcedureDecl(_, id, p, t, stmt) ->
-                procs.Add(compile_proc(id.Identifier, p, t, stmt, semantics))
+            | ProcedureDecl(flags, id, p, t, stmt) ->
+                procs.Add(compile_proc(flags, id.Identifier, p, t, stmt, semantics))
             | ScalarDecl(_, id_ref, Some(t), None) ->
-                alloc_global (Some(id_ref.Identifier)) MachineType.WORD "0"
+                let sym = { Name = id_ref; Type = semantics.SymbolTable.GetIdentifierType id_ref }
+                alloc_global (Some(id_ref.Identifier)) (Asm.Encode.i32_to_bytes 0) (Some sym)
                 ()
             | ScalarDecl(_, id_ref, _, _)
             | ArrayDecl(_, id_ref, _, _, _) ->
-                alloc_global (Some(id_ref.Identifier)) MachineType.WORD "0"
+                let sym = { Name = id_ref; Type = semantics.SymbolTable.GetIdentifierType id_ref }
+                alloc_global (Some(id_ref.Identifier)) (Asm.Encode.i32_to_bytes 0) (Some sym)
                 init_proc <- init_proc @ [Declaration decl]
         | DeclNop -> ()
 
     program |> List.iter compile_decl
-    procs.Add(compile_proc("__init__", [], Void, init_proc, semantics))
+    procs.Add(compile_proc(ProcFlags.PUBLIC, "__init__", [], Void, init_proc, semantics))
 
     {
         Globals = Seq.toList globals
         Procedures = Seq.toList procs
     }
 
-let instruction_tostr =
-    let s =
+let dump (ir: IR) =
+    let instruction_tostr =
+        let s =
+            function
+            | Const(i) -> i.ToString()
+            | Var(sym) -> sym.Name.Identifier
+            | Ptr(sym) -> "*" + sym.Name.Identifier
+            | Nop -> "nop"
+
         function
-        | Const(i) -> i.ToString()
-        | Var(sym)
-        | Ref(sym) -> sym.Name
-        | Temp(i) -> sprintf "(R%i)" i
-        | Nop -> "nop"
+        | Add(dst, op1, op2) -> sprintf "\t%s := %s + %s" (s dst) (s op1) (s op2)
+        | Sub(dst, op1, op2) -> sprintf "\t%s := %s - %s" (s dst) (s op1) (s op2)
+        | Mul(dst, op1, op2) -> sprintf "\t%s := %s * %s" (s dst) (s op1) (s op2)
+        | Div(dst, op1, op2) -> sprintf "\t%s := %s / %s" (s dst) (s op1) (s op2)
+        | Mod(dst, op1, op2) -> sprintf "\t%s := %s %% %s" (s dst) (s op1) (s op2)
+        | Ceq(dst, op1, op2) -> sprintf "\t%s := %s = %s" (s dst) (s op1) (s op2)
+        | Cne(dst, op1, op2) -> sprintf "\t%s := %s <> %s" (s dst) (s op1) (s op2)
+        | Clt(dst, op1, op2) -> sprintf "\t%s := %s < %s" (s dst) (s op1) (s op2)
+        | Cgt(dst, op1, op2) -> sprintf "\t%s := %s > %s" (s dst) (s op1) (s op2)
+        | Cle(dst, op1, op2) -> sprintf "\t%s := %s <= %s" (s dst) (s op1) (s op2)
+        | Cge(dst, op1, op2) -> sprintf "\t%s := %s >=%s" (s dst) (s op1) (s op2)
+        | BitAnd(dst, op1, op2) -> sprintf "\t%s := %s & %s" (s dst) (s op1) (s op2)
+        | BitOr(dst, op1, op2) -> sprintf "\t%s := %s | %s" (s dst) (s op1) (s op2)
+        | BitXor(dst, op1, op2) -> sprintf "\t%s := %s xor %s" (s dst) (s op1) (s op2)
+        | Neg(dst, op1) -> sprintf "\t%s := -%s" (s dst) (s op1)
+        | BitNot(dst, op1) -> sprintf "\t%s := ~%s" (s dst) (s op1)
+        | Copy(dst, op) -> sprintf "\t%s := %s" (s dst) (s op)
+        | Call(dst, op) -> sprintf "\t%s := call %s" (s dst) op
+        | CallExtern(dst) -> sprintf "\t[NOT SUPPORTED] %s" dst // @Todo
+        | Malloc(dst, op) -> sprintf "\t%s := malloc %s" (s dst) (s op)
+        | Free(op) -> sprintf "\tfree %s" (s op)
+        | LoadRef(dst, op) -> sprintf "\t%s := %s^" (s dst) (s op)
+        | StoreRef(dst, op) -> sprintf "\t%s^ := %s" (s dst) (s op)
+        | ArrayLoad(dst, a, i) -> sprintf "\t%s := %s[%s]" (s dst) (s a) (s i)
+        | ArrayStore(a, i, src) -> sprintf "\t%s[%s] := %s" (s a) (s i) (s src)
+        | PushParam(op) -> sprintf "\tPushParam %s" (s op)
+        | FreeParams(op) -> sprintf "\tFreeParams %i" op
+        | IfFalse(op, label) -> sprintf "\tIfFalse %s %s" (s op) label
+        | IfTrue(op, label) -> sprintf "\tIfTrue %s %s" (s op) label
+        | Lab(label) -> sprintf "%s:" label
+        | Goto(label) -> sprintf "\tgoto %s" label
+        | Ret(op) -> sprintf "\tret %s" (s op)
 
-    function
-    | Add(dst, op1, op2) -> sprintf "%s := %s + %s" (s dst) (s op1) (s op2)
-    | Sub(dst, op1, op2) -> sprintf "%s := %s - %s" (s dst) (s op1) (s op2)
-    | Mul(dst, op1, op2) -> sprintf "%s := %s * %s" (s dst) (s op1) (s op2)
-    | Div(dst, op1, op2) -> sprintf "%s := %s / %s" (s dst) (s op1) (s op2)
-    | Mod(dst, op1, op2) -> sprintf "%s := %s %% %s" (s dst) (s op1) (s op2)
-    | Ceq(dst, op1, op2) -> sprintf "%s := %s = %s" (s dst) (s op1) (s op2)
-    | Cne(dst, op1, op2) -> sprintf "%s := %s <> %s" (s dst) (s op1) (s op2)
-    | Clt(dst, op1, op2) -> sprintf "%s := %s < %s" (s dst) (s op1) (s op2)
-    | Cgt(dst, op1, op2) -> sprintf "%s := %s > %s" (s dst) (s op1) (s op2)
-    | Cle(dst, op1, op2) -> sprintf "%s := %s <= %s" (s dst) (s op1) (s op2)
-    | Cge(dst, op1, op2) -> sprintf "%s := %s >= %s" (s dst) (s op1) (s op2)
-    | Neg(dst, op1) -> sprintf "%s := -%s" (s dst) (s op1)
-    | Copy(dst, op) -> sprintf "%s := %s" (s dst) (s op)
-    | Call(dst, op) -> sprintf "%s := call %s" (s dst) op
-    | Malloc(dst, op) -> sprintf "%s := malloc %s" (s dst) (s op)
-    | LoadRef(dst, op) -> sprintf "%s := %s^" (s dst) (s op)
-    | PushParam(op) -> sprintf "PushParam %s" (s op)
-    | FreeParams(op) -> sprintf "FreeParams %i" op
-    | IfFalse(op, label) -> sprintf "IfFalse %s %s" (s op) label
-    | IfTrue(op, label) -> sprintf "IfTrue %s %s" (s op) label
-    | Lab(label) -> sprintf "%s:" label
-    | Goto(label) -> sprintf "goto %s" label
-    | Ret(op) -> sprintf "ret %s" (s op)
-    | _ -> "Not supported"
+    let mutable result = ".text\n"
+    let append i = result <- sprintf "%s%s\n" result (instruction_tostr i)
 
-let tac_to_text (ir: IR) =
-    let mutable result = ""
-    let append i = result <- sprintf "%s\t%s\n" result (instruction_tostr i)
+    ir.Procedures |> List.iter (fun proc ->
+        if proc.IsExtern then
+            result <- sprintf "%sestern(%s)\n" result proc.Name
+        else result <- sprintf "%s%s:\n" result proc.Name
+        proc.Body |> List.iter append)
+
+    result <- result + "\n.raw_data\n"
 
     ir.Globals |> List.iter (fun g ->
         let name =
             function
             | Some n -> n + ":"
             | None -> ""
-        result <- sprintf "%s%s %s %s\n" result (name g.Name) (g.Type.ToString()) g.Value)
-
-    ir.Procedures |> List.iter (fun proc ->
-        result <- sprintf "%s%s:\n" result proc.Name
-        proc.Body |> List.iter append)
+        result <- sprintf "%s%s %A\n" result (name g.Data.Label) (g.Data.Value))
 
     result

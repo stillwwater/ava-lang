@@ -1,27 +1,44 @@
+///
+/// Ava Assembler
+///
 
 module Asm
 
 open System.Text
 open System.Collections.Generic
 
-let str_to_utf32 (str: string) =
-    Array.toList (Encoding.UTF32.GetBytes(str))
+let assembler_signature = ((int16 ':' <<< 8) ||| int16 '(')
 
-let str_to_utf8 (str: string) =
-    Array.toList (Encoding.UTF8.GetBytes(str))
+let assembly_version = (2s <<< 8) ||| 0s
 
-let i32_to_bytes i =
-    [ byte(i &&& 0xff);
-       byte((i &&& 0xff00) >>> 8);
-       byte((i &&& 0xff0000) >>> 16);
-       byte((i &&& 0xff000000) >>> 24); ]
+
+module Encode =
+    let str_to_utf32 (str: string) =
+        Array.toList (Encoding.UTF32.GetBytes(str))
+
+    let str_to_utf8 (str: string) =
+        Array.toList (Encoding.UTF8.GetBytes(str))
+
+    let i32_to_bytes i =
+        [ byte(i &&& 0xff);
+           byte((i &&& 0xff00) >>> 8);
+           byte((i &&& 0xff0000) >>> 16);
+           byte((i &&& 0xff000000) >>> 24); ]
+
+    let i16_to_bytes (i: int16) =
+        [ byte(i &&& 0xffs);
+          byte((i &&& 0xff00s) >>> 8);]
+
+    let bytes_to_int (bytes: byte list) =
+        let mutable res = int bytes.Head
+        bytes.Tail |> List.iteri (fun i x -> res <- res ||| (int x <<< 8 * (i + 1)))
+        res
 
 type Bytecode =
     {
-        ImportTable : ImportTableEntry list
-        ExportTable : ExportTableEntry list
+        ImportTable : ProcTableEntry list
+        ExportTable : ProcTableEntry list
         Text        : OpCode list
-        Const       : Data list
         Data        : Data list
     }
 
@@ -37,16 +54,10 @@ and Data =
         Value : byte list
     }
 
-and ImportTableEntry =
+and ProcTableEntry =
     {
         Name  : string
         Label : Label
-    }
-
-and ExportTableEntry =
-    {
-        Pointer : int
-        Name    : string
     }
 
 and Header =
@@ -56,7 +67,6 @@ and Header =
         StackSize : int32
         HeapSize  : int32
         TextPtr   : int32
-        ConstPtr  : int32
         DatPtr    : int32
         ImportTablePtr : int32
         ExportTablePtr : int32
@@ -66,20 +76,27 @@ and Header =
 
     member x.ToBytes() =
         List.concat
-            [ i32_to_bytes (int((x.Version <<< 8) ||| x.Signature));
-               i32_to_bytes x.StackSize;
-               i32_to_bytes x.HeapSize;
-               i32_to_bytes x.TextPtr;
-               i32_to_bytes x.ConstPtr;
-               i32_to_bytes x.DatPtr;
-               i32_to_bytes x.ImportTablePtr;
-               i32_to_bytes x.ExportTablePtr ]
+            [ Encode.i16_to_bytes x.Signature;
+              Encode.i16_to_bytes x.Version;
+              Encode.i32_to_bytes x.StackSize;
+              Encode.i32_to_bytes x.HeapSize;
+              Encode.i32_to_bytes x.ImportTablePtr;
+              Encode.i32_to_bytes x.ExportTablePtr;
+              Encode.i32_to_bytes x.TextPtr;
+              Encode.i32_to_bytes x.DatPtr;
+              Encode.i32_to_bytes 0x03030303 ] // Reserved
 
 and Register =
     | EAX = 0x00
     | EDX = 0x01
     | ESP = 0x02
     | EBP = 0x04
+
+and Section =
+    | TEXT   = 0x01
+    | IMPORT = 0x02
+    | EXPORT = 0x03
+    | DATA   = 0x04
 
 and OpCode =
     | Sll      of Register * Register
@@ -144,6 +161,8 @@ and OpCode =
             | Label(l) -> context.[l] // @Todo error
             | Value(v) -> v
 
+        let i32 = Encode.i32_to_bytes
+
         match x with
         | Sll(r0, r1)    -> [ 0x00uy; 0x00uy; byte r0; byte r1; ]
         | Srl(r0, r1)    -> [ 0x01uy; 0x00uy; byte r0; byte r1; ]
@@ -186,19 +205,19 @@ and OpCode =
         | Not(r0)        -> [ 0x26uy; 0x00uy; byte r0; 0x00uy;  ]
         | Ret(r0)        -> [ 0x27uy; 0x00uy; byte r0; 0x00uy;  ]
         | Halt(r0)       -> [ 0x28uy; 0x00uy; byte r0; 0x00uy;  ]
-        | ImmAdd(r0, i)  -> List.concat [ [ 0x29uy; 0x00uy; byte r0; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Ldw(r0, i)     -> List.concat [ [ 0x2Auy; 0x00uy; byte r0; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Ldb(r0, i)     -> List.concat [ [ 0x2Buy; 0x00uy; byte r0; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Stw(r0, i)     -> List.concat [ [ 0x2Cuy; 0x00uy; byte r0; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Stb(r0, i)     -> List.concat [ [ 0x2Duy; 0x00uy; byte r0; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Lea(r0, i)     -> List.concat [ [ 0x2Euy; 0x00uy; byte r0; 0x00uy ]; i32_to_bytes (eval i) ]
-        | ImmSll(r0, i)  -> List.concat [ [ 0x2Fuy; 0x00uy; byte r0; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Jmp(i)         -> List.concat [ [ 0x3Auy; 0x00uy; 0x00uy; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Je(i)          -> List.concat [ [ 0x3Buy; 0x00uy; 0x00uy; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Jne(i)         -> List.concat [ [ 0x3Cuy; 0x00uy; 0x00uy; 0x00uy ]; i32_to_bytes (eval i) ]
-        | ImmPush(i)     -> List.concat [ [ 0x3Duy; 0x00uy; 0x00uy; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Call(i)        -> List.concat [ [ 0x3Euy; 0x00uy; 0x00uy; 0x00uy ]; i32_to_bytes (eval i) ]
-        | Calx(i)        -> List.concat [ [ 0x3Fuy; 0x00uy; 0x00uy; 0x00uy ]; i32_to_bytes (eval i) ]
+        | ImmAdd(r0, i)  -> List.concat [ [ 0x29uy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Ldw(r0, i)     -> List.concat [ [ 0x2Auy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Ldb(r0, i)     -> List.concat [ [ 0x2Buy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Stw(r0, i)     -> List.concat [ [ 0x2Cuy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Stb(r0, i)     -> List.concat [ [ 0x2Duy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Lea(r0, i)     -> List.concat [ [ 0x2Euy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | ImmSll(r0, i)  -> List.concat [ [ 0x2Fuy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Jmp(i)         -> List.concat [ [ 0x3Auy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
+        | Je(i)          -> List.concat [ [ 0x3Buy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
+        | Jne(i)         -> List.concat [ [ 0x3Cuy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
+        | ImmPush(i)     -> List.concat [ [ 0x3Duy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
+        | Call(i)        -> List.concat [ [ 0x3Euy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
+        | Calx(i)        -> List.concat [ [ 0x3Fuy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
         | Lab(_)         -> [ ]
 
     member x.GetSize() =
@@ -250,10 +269,9 @@ let assemble (bytecode: Bytecode) =
     // abstract machine host for extern calls.
     bytecode.ImportTable |> List.iter
         (fun proc ->
+            let name = Encode.str_to_utf32 proc.Name
+            emit(Encode.i32_to_bytes(name.Length >>> 2), &assembly.Header, &pos)
             add_label proc.Label
-
-            let name = str_to_utf32 proc.Name
-            emit(i32_to_bytes(name.Length >>> 2), &assembly.Header, &pos)
             emit(name, &assembly.Header, &pos))
 
     let export_ptr = pos
@@ -262,71 +280,76 @@ let assemble (bytecode: Bytecode) =
     // called from the host application.
     // Format:
     //      str_length (word)
-    //      proc_name
-    //      ptr to text section
+    //      proc_name (utf32)
+    //      ptr to text section (word)
     //      ...
-    bytecode.ExportTable |> List.iter
-        (fun proc ->
-            let name = str_to_utf32 proc.Name
-            emit(i32_to_bytes(name.Length >>> 2), &assembly.Header, &pos)
-            emit(name, &assembly.Header, &pos)
-            emit(i32_to_bytes proc.Pointer, &assembly.Header, &pos))
+    // We cannot resolve the labels yet, so we just calculate
+    // the size of the header.
+    bytecode.ExportTable |> List.iter (fun proc ->
+        pos <- pos + proc.Name.Length + 2)
 
     // pos currently points to the start of the text section
     let text_ptr = pos
 
     // The text section constains all instructions
     // For now just use calculate its size
-    bytecode.Text |> List.iter (fun opcode -> pos <- pos + opcode.GetSize())
-
-    let const_ptr = pos
-
-    let emit_data (data: Data list) =
-        data |> List.iter
-            (fun d ->
-                match d.Label with
-                | Some(l) -> add_label l
-                | None -> ()
-
-                emit(d.Value, &assembly.Data, &pos))
-
-    emit_data bytecode.Const
+    bytecode.Text |> List.iter
+        (fun opcode ->
+            match opcode with
+            | Lab(l) -> add_label l
+            | _ -> pos <- pos + opcode.GetSize())
 
     let dat_ptr = pos
-    emit_data bytecode.Data
+
+    bytecode.Data |> List.iter
+        (fun d ->
+            match d.Label with
+            | Some(l) -> add_label l
+            | None -> ()
+            pos <- pos + (d.Value.Length >>> 2))
+
+    pos <- export_ptr // Rewind
+
+    bytecode.ExportTable |> List.iter
+        (fun proc ->
+            let name = Encode.str_to_utf32 proc.Name
+            emit(Encode.i32_to_bytes(name.Length >>> 2), &assembly.Header, &pos)
+            emit(name, &assembly.Header, &pos)
+            emit(Encode.i32_to_bytes context.[proc.Label], &assembly.Header, &pos))
+
+    pos <- dat_ptr
+
+    bytecode.Data |> List.iter (fun d -> emit(d.Value, &assembly.Data, &pos))
 
     // Rewind to emit text section,
     // now that all labels have been resolved
     pos <- text_ptr
 
-    bytecode.Text |> List.iter
-        (fun opcode ->
-            match opcode with
-            | Lab(l) -> add_label l
-            | _ -> emit(opcode.ToBytes(context), &assembly.Text, &pos))
+    bytecode.Text |> List.iter (fun op -> emit(op.ToBytes(context), &assembly.Text, &pos))
 
     let header =
         {
-            Signature = ((int16 ':' <<< 8) ||| int16 ')')
-            Version   = (0s <<< 8) ||| 2s
+            Signature = assembler_signature
+            Version   = assembly_version
             StackSize = 32
             HeapSize = 32
             TextPtr = text_ptr
-            ConstPtr = const_ptr
             DatPtr = dat_ptr
             ImportTablePtr = import_ptr
             ExportTablePtr = export_ptr
         }
 
-    printfn "%A" header
+    assembly.Header <- header.ToBytes() @ assembly.Header
+    assembly
 
-    pos <- 0
-    emit(header.ToBytes(), &assembly.Header, &pos)
-
+let concat(assembly) =
     Seq.toArray (List.concat [ assembly.Header; assembly.Text; assembly.Data ] )
 
-let dump (bytecode: OpCode list) =
-    let buf = new StringBuilder()
+let dump bytecode (assembly: Assembly option) =
+    let buf = StringBuilder()
+
+    let append (s: string) =
+        buf.Append(s) |> ignore
 
     let reg =
         function
@@ -336,10 +359,23 @@ let dump (bytecode: OpCode list) =
         | Register.ESP -> "esp"
         | _ -> "Unknown Register"
 
+    let hexi n =
+        if n = 0 then "0h"
+        else sprintf "0%Xh" n
+
+    let hexb n =
+        if n = 0uy then "0h"
+        else sprintf "0%Xh" n
+
+    let dump_bytes (bytes: byte list) =
+        append(hexb bytes.Head)
+        bytes.Tail |> List.iter (fun x -> append(", "); append(hexb x))
+        append "\n"
+
     let dump_opcode =
         let s_imm =
             function
-            | Value(v) -> sprintf "0x%X" v
+            | Value(v) -> hexi v
             | Label(l) -> l
 
         function
@@ -399,12 +435,57 @@ let dump (bytecode: OpCode list) =
         | Calx(i)       -> sprintf "\tcalx\t%s" (s_imm i)
         | Lab(l)        -> sprintf "%s:" l
 
-    buf.AppendLine(".text") |> ignore
+    match assembly with
+    | Some(a) ->
+        let e = Encode.bytes_to_int
+        let signature = sprintf "%c%c" (char (e a.Header.[0..0])) (char (e a.Header.[1..1]))
 
-    bytecode |> List.iter
-        (fun x ->
-            buf.AppendLine(dump_opcode x) |> ignore
-            ())
+        append(";;\t\t\t\t;;\n")
+        append(sprintf ";; Ava Assembly (%i bytes)\t;;\n;;\t\t\t\t;;\n" (concat a).Length)
+        append(sprintf ";;\tsignature\t%s\t;;\n" signature)
+        append(sprintf ";;\tversion\t\t%i.%i\t;;\n" (e a.Header.[2..2]) (e a.Header.[3..3]))
+        append(sprintf ";;\tstack_size\t%X\t;;\n" (e a.Header.[4..7]))
+        append(sprintf ";;\theap_size\t%X\t;;\n" (e a.Header.[8..11]))
+        append(sprintf ";;\timport_table\t%X\t;;\n" (e a.Header.[12..15]))
+        append(sprintf ";;\texport_table\t%X\t;;\n" (e a.Header.[16..19]))
+        append(sprintf ";;\ttext_ptr\t%X\t;;\n" (e a.Header.[20..23]))
+        append(sprintf ";;\tdata_ptr\t%X\t;;\n" (e a.Header.[24..27]))
+        append(";;\t\t\t\t;;\n")
+    | None -> ()
 
+    append("\n.import\n")
+    bytecode.ImportTable |> List.iter
+        (fun p ->
+            let name = Encode.str_to_utf32 p.Name
+            append("\t.word\t")
+            append(hexi p.Name.Length)
+            append("\n")
+            append(p.Label)
+            append(":\t.byte\t")
+            dump_bytes name)
+
+    append("\n.export\n")
+    bytecode.ExportTable |> List.iter
+        (fun p ->
+            let name = Encode.str_to_utf32 p.Name
+            append("\t.word\t")
+            append(hexi p.Name.Length)
+            append("\n")
+            append("\t.byte\t")
+            dump_bytes name
+            append("\t.word\t")
+            append(p.Label)
+            append("\n"))
+
+    append("\n.text\n")
+    bytecode.Text |> List.iter (fun x -> append(dump_opcode x); append("\n"))
+
+    append("\n.data\n")
+    bytecode.Data |> List.iter
+        (fun d ->
+            match d.Label with
+            | Some(l) -> append(l + ":\t.byte\t")
+            | None -> append("\t.byte\t")
+            dump_bytes d.Value)
 
     buf.ToString()
