@@ -110,10 +110,6 @@ type ProcedureTable(program: Program) as self =
         | DeclNop -> ()
 
     do
-        // Register builtin procedures
-        self.Add("print",{ ReturnType = Void; ParameterTypes =
-            [ { Type = String; IsArray = false } ] })
-
         // Scan entire ast for top level procedure declarations
         program |> List.iter scan_decl
 
@@ -129,9 +125,10 @@ type SymbolTable(program: Declaration list) as self =
         match decl with
         | VariableDecl(d) ->
             match d with
-            | ScalarDecl(_)
-            | ArrayDecl(_) ->
+            | ScalarDecl(_, id_ref, _, _)
+            | ArrayDecl(_, id_ref, _, _, _) ->
                 scope_stack.AddDeclaration d
+                map_identifier id_ref
             | ProcedureDecl(_,a, b, c, e) ->
                 // Procedure gets added to global scope
                 scope_stack.AddDeclaration d
@@ -175,14 +172,18 @@ type SymbolTable(program: Declaration list) as self =
             | CompoundStatement(cs) -> scan_block cs
             | IfStatement(clauses, Some(statements)) ->
                 clauses |> List.iter scan_cond_clause
+                scope_stack.Push()
                 statements |> List.iter scan_statement
+                scope_stack.Pop() |> ignore
             | IfStatement(clauses, None) ->
                 clauses |> List.iter scan_cond_clause
             | WhileStatement(expr, stmt) ->
                 loop_stmt_stack.Push(expr, stmt)
                 scan_expression expr
+                scope_stack.Push()
                 scan_statement stmt
                 loop_stmt_stack.Pop() |> ignore
+                scope_stack.Pop() |> ignore
             | ReturnStatement(Some(expr)) -> scan_expression expr
             | ReturnStatement(None) ->
                 if return_type <> Void then
@@ -225,7 +226,9 @@ type SymbolTable(program: Declaration list) as self =
 
         and scan_cond_clause(expr, statements) =
             scan_expression expr
+            scope_stack.Push()
             statements |> List.iter scan_statement
+            scope_stack.Pop() |> ignore
 
         scope_stack.Push() // Push procedure scope
         parameters |> List.iter scope_stack.AddDeclaration
@@ -244,7 +247,7 @@ type SymbolTable(program: Declaration list) as self =
             scalar_type Void
 
 type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTable) as self =
-    inherit Dictionary<Expression, VariableType>(HashIdentity.Reference)
+    inherit Dictionary<Expression, VariableType>()
 
     let rec is_const_expression expr =
         match expr with
@@ -259,7 +262,11 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
         | VariableDecl(d) ->
             match d with
             | ProcedureDecl(_, a, b, c, d) -> scan_proc_decl(a, b, c, d)
-            | _ -> () // @Todo: Handle global expressions
+            | ScalarDecl(_, _, _, Some(e)) -> scan_expression e |> ignore
+            | ArrayDecl(_, _, Some(e), _, _) -> scan_expression e |> ignore
+            | _ -> ()
+                // @Todo: check if types match
+
         | DeclNop -> ()
 
     and resolve_implicit_types =
@@ -269,32 +276,29 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
         let resolve_duplicate id_ref =
              // id_refs are created everytime a symbol is used so we update the type
              // of all references without running 'scan_expression' for each one
+
+             // XXX: Type inference bug:
+             // The resolve_duplicate makes multiple identifiers point
+             // to the incorrect parent declaration.
+
              let duplicate_decl = types.[List.findIndex ((=) id_ref) refs]
              types <- duplicate_decl :: types
 
         let infer_scalar_type id_ref e =
-            if not (List.contains id_ref refs) then
-                let implicit_type = scan_expression e
-                Some implicit_type
-            else
-                resolve_duplicate id_ref
-                None
+            let implicit_type = scan_expression e
+            Some implicit_type
 
         let infer_array_type id_ref a =
-            if not (List.contains id_ref refs) then
-                let mutable implicit_type = scalar_type Void
-                for e in a do
-                    let expr_type = scan_expression e
+            let mutable implicit_type = scalar_type Void
+            for e in a do
+                let expr_type = scan_expression e
 
-                    if implicit_type.Type <> Void && expr_type <> implicit_type then
-                        // Assert all elements in the array are of the same type
-                        printfn "TypeError: expected %A, got %A" implicit_type.Type expr_type.Type
+                if implicit_type.Type <> Void && expr_type <> implicit_type then
+                    // Assert all elements in the array are of the same type
+                    printfn "TypeError: expected %A, got %A" implicit_type.Type expr_type.Type
 
-                    implicit_type <- expr_type
-                Some implicit_type
-            else
-                resolve_duplicate id_ref
-                None
+                implicit_type <- expr_type
+            Some implicit_type
 
         for symbol in symbol_table do
             let id_ref = symbol.Key
@@ -356,6 +360,15 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                 match sexpr with
                 | Expression(e) -> scan_expression e |> ignore
                 | Nop -> ()
+            | Declaration(decl) ->
+                match decl with
+                | VariableDecl(d) ->
+                    match d with
+                    | ScalarDecl(_, _, Some(t), Some(e)) -> scan_expression e |> ignore
+                    | ScalarDecl(_, _, None, Some(e)) -> () // Handled by type inference
+                    | ArrayDecl(_, _, Some(e), Some(t), None) -> scan_expression e |> ignore
+                    | _ -> ()
+                | DeclNop -> ()
             | CompoundStatement(cs) -> scan_block cs
             | IfStatement(clauses, Some(statements)) ->
                 clauses |> List.iter scan_cond_clause
@@ -431,7 +444,7 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                 let typeof_rhs = scan_expression rhs
 
                 match op with
-                | CondOr | CondAnd | Xor->
+                | CondOr | CondAnd | Xor ->
                     scalar_type Int // Conditional expressions resolve to int
                 | Eq | NotEq ->
                     match typeof_lhs, typeof_rhs with
@@ -474,16 +487,48 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
 
                     let param_types = proc.ParameterTypes
 
-                    if List.length args <> List.length param_types then
-                        printfn "Wrong number of arguments for %s: expected %i got %i." (id.Identifier) (List.length param_types) (List.length args)
+                    let is_var_args =
+                        proc.ParameterTypes |> List.exists ((=) (scalar_type TSeq)) ||
+                        proc.ParameterTypes |> List.exists ((=) (scalar_type TSequ))
+
+                    if is_var_args then
+                        if not(param_types.[param_types.Length - 1] = scalar_type TSeq ||
+                                param_types.[param_types.Length - 1] = scalar_type TSequ) then
+                            // @Todo: Check for more than one varargs
+                            printfn "Variable arguments must be the last parameter."
+
+                        if List.length args < List.length param_types - 1 then
+                            // Variable parameters require 0 or more arguments
+                            printfn "Wrong number of arguments for %s: expected at least %i got %i." (id.Identifier) (List.length param_types) (List.length args)
+                    else
+                        if List.length args <> List.length param_types then
+                            printfn "Wrong number of arguments for %s: expected %i got %i." (id.Identifier) (List.length param_types) (List.length args)
 
                     let arg_types = args |> List.map scan_expression
+                    let mutable generic_type = None
 
-                    let param_types_match index a b =
-                        if a <> b && b <> (scalar_type Void) then
-                            printfn "Invalid argument for %s: expected %s got %s" (id.Identifier) (b.ToString()) (a.ToString())
+                    let param_types_match i a =
+                        let b =
+                            if i >= param_types.Length then
+                                param_types.[param_types.Length - 1]
+                            else param_types.[i]
 
-                    List.iteri2 param_types_match arg_types param_types
+                        let is_valid rhs =
+                            if a <> rhs && rhs <> (scalar_type Void) then
+                                printfn "Invalid argument for %s: expected %s got %s" (id.Identifier) (rhs.ToString()) (a.ToString())
+
+                        match b with
+                        | { Type = T; IsArray = false }
+                        | { Type = TSeq; IsArray = false } ->
+                            match generic_type with
+                            | Some(t) -> is_valid t
+                            | None -> generic_type <- Some a
+                        | { Type = Tu; IsArray = false }
+                        | { Type = TSequ; IsArray = false } -> ()
+                        | _ -> is_valid b
+
+
+                    arg_types |> List.iteri param_types_match
 
                     scalar_type proc.ReturnType
                 else
@@ -499,7 +544,10 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                 | StringLiteral(s) -> scalar_type String
                 | CharLiteral(c) -> scalar_type Char
 
-        self.Add(expr, expression_type)
+
+        if not(self.ContainsKey expr) then
+            self.Add(expr, expression_type)
+
         expression_type
 
     do resolve_implicit_types

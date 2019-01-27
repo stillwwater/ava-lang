@@ -38,6 +38,8 @@ let yyerror (msg: string) =
 %token COLON
 %token DOT
 %token HASH
+%token DOLLAR
+%token DOUBLE_DOLLAR
 
 %token SINGLE_EQUALS
 %token DOUBLE_COLON
@@ -77,6 +79,8 @@ let yyerror (msg: string) =
 %token KW_BREAK
 %token KW_CONTINUE
 %token KW_EXPORT
+%token DR_EXTERN
+%token DR_UNCHECKED
 
 %token KW_COUNT
 %token EOL
@@ -202,21 +206,25 @@ array_decl: IDENT COLON LBRACKET RBRACKET KW_OF type_spec EOL
 
 // main :: (arg : type) -> type
 procedure_decl: IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.INTERNAL, idref $1, $4, $7, $8)}
+    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, $4, $7, $8) }
 
     | IDENT DOUBLE_COLON LPAREN RPAREN RARROW type_spec compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.INTERNAL, idref $1, [], $6, $7)}
+    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, [], $6, $7) }
 
     | IDENT DOUBLE_COLON LPAREN parameters RPAREN compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.INTERNAL, idref $1, $4, Ast.Void, $6)}
+    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, $4, Ast.Void, $6) }
 
     | IDENT DOUBLE_COLON LPAREN RPAREN compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.INTERNAL, idref $1, [], Ast.Void, $5)}
+    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, [], Ast.Void, $5) }
 
     // export main :: (arg : type) -> type
     // @Todo: KW_EXPORT can be applied to any declaration
+    // @Obsolete (use #local instead)
     | KW_EXPORT IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $2, $5, $8, $9)}
+    { Ast.ProcedureDecl(ProcFlags.LOCAL, idref $2, $5, $8, $9) }
+
+    | HASH DR_EXTERN IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec EOL
+    { Ast.ProcedureDecl(ProcFlags.EXTERN, idref $3, $6, $9, [Ast.Declaration(Ast.DeclNop)]) }
 
 parameters: parameter_list  { $1 }
     // @Todo: ommit void
@@ -233,6 +241,14 @@ parameter: IDENT COLON type_spec
     // array : []int
     | IDENT COLON LBRACKET RBRACKET type_spec
     { Ast.ArrayDecl(ArrayFlags.NONE, idref $1, None, Some $5, None) }
+    | IDENT COLON DOLLAR
+    { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some Ast.T, None) }
+    | IDENT COLON DOUBLE_DOLLAR
+    { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some Ast.TSeq, None) }
+    | IDENT COLON DOLLAR HASH DR_UNCHECKED
+    { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some Ast.Tu, None) }
+    | IDENT COLON DOUBLE_DOLLAR HASH DR_UNCHECKED
+    { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some Ast.TSequ, None) }
 
 stmt_list: stmt_list stmt  { $1 @ [$2] }
     | stmt                 { [$1] }

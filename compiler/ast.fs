@@ -6,8 +6,9 @@ open System
 type ProcFlags =
     // @Todo: These flags should apply to any declaration
     // DeclFlgs * VariableDecl
-    | INTERNAL = 0b0001
-    | PUBLIC   = 0b0010
+    | PUBLIC   = 0b0001
+    | LOCAL    = 0b0010
+    | EXTERN   = 0b0100
 
 [<Flags>]
 type ScalarFlags =
@@ -42,6 +43,11 @@ and TypeSpec =
     | Char   // Same as int
     | Text   // Same as [] of byte
     | String // Same as [] of char
+    // Used in calling external procedures
+    | T      // $
+    | TSeq   // $$
+    | Tu     // $ #unchecked
+    | TSequ  // $$ #unchecked
 
 and Identifier = string
 

@@ -65,6 +65,8 @@ rule tokenstream =
     | "break"    { KW_BREAK }
     | "continue" { KW_CONTINUE }
     | "export"   { KW_EXPORT }
+    | "extern"   { DR_EXTERN }
+    | "unchecked"{ DR_UNCHECKED }
     // Native procedures
     | "count"    { KW_COUNT }
     | ['a'-'z' '_']+ { IDENT(lexeme lexbuf) }
@@ -82,6 +84,8 @@ rule tokenstream =
     | "*"        { ASTERISK }
     | "/"        { FSLASH }
     | "%"        { PERCENT }
+    | "$"        { DOLLAR }
+    | "$$"        { DOUBLE_DOLLAR }
     | "=="       { DOUBLE_EQUALS }
     | "<>"       { LESS_GREATER }
     | "<="       { LESS_EQUALS }

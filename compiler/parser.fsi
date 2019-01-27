@@ -5,6 +5,8 @@ type token =
   | EOF
   | EOL
   | KW_COUNT
+  | DR_UNCHECKED
+  | DR_EXTERN
   | KW_EXPORT
   | KW_CONTINUE
   | KW_BREAK
@@ -41,6 +43,8 @@ type token =
   | COLON_EQUALS
   | DOUBLE_COLON
   | SINGLE_EQUALS
+  | DOUBLE_DOLLAR
+  | DOLLAR
   | HASH
   | DOT
   | COLON
@@ -63,6 +67,8 @@ type tokenId =
     | TOKEN_EOF
     | TOKEN_EOL
     | TOKEN_KW_COUNT
+    | TOKEN_DR_UNCHECKED
+    | TOKEN_DR_EXTERN
     | TOKEN_KW_EXPORT
     | TOKEN_KW_CONTINUE
     | TOKEN_KW_BREAK
@@ -99,6 +105,8 @@ type tokenId =
     | TOKEN_COLON_EQUALS
     | TOKEN_DOUBLE_COLON
     | TOKEN_SINGLE_EQUALS
+    | TOKEN_DOUBLE_DOLLAR
+    | TOKEN_DOLLAR
     | TOKEN_HASH
     | TOKEN_DOT
     | TOKEN_COLON
