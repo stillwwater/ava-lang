@@ -90,7 +90,7 @@ and Register =
     | EAX = 0x00
     | EDX = 0x01
     | ESP = 0x02
-    | EBP = 0x04
+    | EBP = 0x03
 
 and Section =
     | TEXT   = 0x01
@@ -138,13 +138,13 @@ and OpCode =
     | Push     of Register
     | Pop      of Register
     | Not      of Register
+    | Neg      of Register
+    | Negf     of Register
     | Ret      of Register
     | Halt     of Register
     | ImmAdd   of Register * Immediate
     | Ldw      of Register * Immediate
-    | Ldb      of Register * Immediate
     | Stw      of Register * Immediate
-    | Stb      of Register * Immediate
     | Lea      of Register * Immediate
     | ImmSll   of Register * Immediate
     | Jmp      of Immediate
@@ -203,15 +203,15 @@ and OpCode =
         | Push(r0)       -> [ 0x24uy; 0x00uy; byte r0; 0x00uy;  ]
         | Pop(r0)        -> [ 0x25uy; 0x00uy; byte r0; 0x00uy;  ]
         | Not(r0)        -> [ 0x26uy; 0x00uy; byte r0; 0x00uy;  ]
-        | Ret(r0)        -> [ 0x27uy; 0x00uy; byte r0; 0x00uy;  ]
-        | Halt(r0)       -> [ 0x28uy; 0x00uy; byte r0; 0x00uy;  ]
-        | ImmAdd(r0, i)  -> List.concat [ [ 0x29uy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
-        | Ldw(r0, i)     -> List.concat [ [ 0x2Auy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
-        | Ldb(r0, i)     -> List.concat [ [ 0x2Buy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
-        | Stw(r0, i)     -> List.concat [ [ 0x2Cuy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
-        | Stb(r0, i)     -> List.concat [ [ 0x2Duy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Neg(r0)        -> [ 0x27uy; 0x00uy; byte r0; 0x00uy;  ]
+        | Negf(r0)       -> [ 0x28uy; 0x00uy; byte r0; 0x00uy;  ]
+        | Ret(r0)        -> [ 0x29uy; 0x00uy; byte r0; 0x00uy;  ]
+        | Halt(r0)       -> [ 0x2Auy; 0x00uy; byte r0; 0x00uy;  ]
+        | Ldw(r0, i)     -> List.concat [ [ 0x2Duy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
         | Lea(r0, i)     -> List.concat [ [ 0x2Euy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
-        | ImmSll(r0, i)  -> List.concat [ [ 0x2Fuy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | Stw(r0, i)     -> List.concat [ [ 0x2Fuy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | ImmAdd(r0, i)  -> List.concat [ [ 0x30uy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
+        | ImmSll(r0, i)  -> List.concat [ [ 0x31uy; 0x00uy; byte r0; 0x00uy ]; i32 (eval i) ]
         | Jmp(i)         -> List.concat [ [ 0x3Auy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
         | Je(i)          -> List.concat [ [ 0x3Buy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
         | Jne(i)         -> List.concat [ [ 0x3Cuy; 0x00uy; 0x00uy; 0x00uy ]; i32 (eval i) ]
@@ -225,9 +225,7 @@ and OpCode =
         | Lab(_) -> 0
         | ImmAdd(_)
         | Ldw(_)
-        | Ldb(_)
         | Stw(_)
-        | Stb(_)
         | Lea(_)
         | ImmSll(_)
         | Jmp(_)
@@ -290,6 +288,7 @@ let assemble (bytecode: Bytecode) =
 
     // pos currently points to the start of the text section
     let text_ptr = pos
+    pos <- 0
 
     // The text section constains all instructions
     // For now just use calculate its size
@@ -299,7 +298,7 @@ let assemble (bytecode: Bytecode) =
             | Lab(l) -> add_label l
             | _ -> pos <- pos + opcode.GetSize())
 
-    let dat_ptr = pos
+    let dat_ptr = text_ptr + pos
 
     bytecode.Data |> List.iter
         (fun d ->
@@ -331,12 +330,12 @@ let assemble (bytecode: Bytecode) =
         {
             Signature = assembler_signature
             Version   = assembly_version
-            StackSize = 32
-            HeapSize = 32
-            TextPtr = text_ptr
-            DatPtr = dat_ptr
-            ImportTablePtr = import_ptr
-            ExportTablePtr = export_ptr
+            StackSize = 4096
+            HeapSize = 4096
+            TextPtr = (text_ptr <<< 2)
+            DatPtr = (dat_ptr <<< 2)
+            ImportTablePtr = (import_ptr <<< 2)
+            ExportTablePtr = (export_ptr <<< 2)
         }
 
     assembly.Header <- header.ToBytes() @ assembly.Header
@@ -418,13 +417,13 @@ let dump bytecode (assembly: Assembly option) =
         | Push(r0)      -> sprintf "\tpush\t%s" (reg r0)
         | Pop(r0)       -> sprintf "\tpop\t%s" (reg r0)
         | Not(r0)       -> sprintf "\tnot\t%s" (reg r0)
+        | Neg(r0)       -> sprintf "\tneg\t%s" (reg r0)
+        | Negf(r0)      -> sprintf "\tnegf\t%s" (reg r0)
         | Ret(r0)       -> sprintf "\tret\t%s" (reg r0)
         | Halt(r0)      -> sprintf "\thalt\t%s" (reg r0)
         | ImmAdd(r0, i) -> sprintf "\tadd\t%s, %s" (reg r0) (s_imm i)
         | Ldw(r0, i)    -> sprintf "\tldw\t%s, %s" (reg r0) (s_imm i)
-        | Ldb(r0, i)    -> sprintf "\tldb\t%s, %s" (reg r0) (s_imm i)
         | Stw(r0, i)    -> sprintf "\tstw\t%s, %s" (reg r0) (s_imm i)
-        | Stb(r0, i)    -> sprintf "\tstb\t%s, %s" (reg r0) (s_imm i)
         | Lea(r0, i)    -> sprintf "\tlea\t%s, %s" (reg r0) (s_imm i)
         | ImmSll(r0, i) -> sprintf "\tsll\t%s, %s" (reg r0) (s_imm i)
         | Jmp(i)        -> sprintf "\tjmp\t%s" (s_imm i)

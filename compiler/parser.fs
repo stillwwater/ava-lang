@@ -21,7 +21,7 @@ let yyerror (msg: string) =
 
 # 22 "parser.fs"
 // This type is the type of tokens accepted by the parser
-type token = 
+type token =
   | Empty
   | EOF
   | EOL
@@ -84,7 +84,7 @@ type token =
   | FLOAT_LITERAL of (float32)
   | INT_LITERAL of (int)
 // This type is used to give symbolic names to token indexes, useful for error messages
-type tokenId = 
+type tokenId =
     | TOKEN_Empty
     | TOKEN_EOF
     | TOKEN_EOL
@@ -149,7 +149,7 @@ type tokenId =
     | TOKEN_end_of_input
     | TOKEN_error
 // This type is used to give symbolic names to token indexes, useful for error messages
-type nonTerminalId = 
+type nonTerminalId =
     | NONTERM__startstart
     | NONTERM_start
     | NONTERM_program
@@ -199,400 +199,400 @@ type nonTerminalId =
     | NONTERM_literal
 
 // This function maps tokens to integer indexes
-let tagOfToken (t:token) = 
+let tagOfToken (t:token) =
   match t with
-  | Empty  -> 0 
-  | EOF  -> 1 
-  | EOL  -> 2 
-  | KW_COUNT  -> 3 
-  | DR_UNCHECKED  -> 4 
-  | DR_EXTERN  -> 5 
-  | KW_EXPORT  -> 6 
-  | KW_CONTINUE  -> 7 
-  | KW_BREAK  -> 8 
-  | KW_RETURN  -> 9 
-  | KW_ELSIF  -> 10 
-  | KW_ELSE  -> 11 
-  | KW_OF  -> 12 
-  | KW_END  -> 13 
-  | KW_DO  -> 14 
-  | KW_WHILE  -> 15 
-  | KW_THEN  -> 16 
-  | KW_IF  -> 17 
-  | RARROW  -> 18 
-  | RBRACKET  -> 19 
-  | LBRACKET  -> 20 
-  | RPAREN  -> 21 
-  | LPAREN  -> 22 
-  | AMP  -> 23 
-  | KW_NOT  -> 24 
-  | KW_AND  -> 25 
-  | KW_OR  -> 26 
-  | GREATER  -> 27 
-  | GREATER_EQUALS  -> 28 
-  | LESS  -> 29 
-  | LESS_EQUALS  -> 30 
-  | KW_IS  -> 31 
-  | LESS_GREATER  -> 32 
-  | DOUBLE_EQUALS  -> 33 
-  | PERCENT  -> 34 
-  | ASTERISK  -> 35 
-  | FSLASH  -> 36 
-  | PLUS  -> 37 
-  | MINUS  -> 38 
-  | COLON_EQUALS  -> 39 
-  | DOUBLE_COLON  -> 40 
-  | SINGLE_EQUALS  -> 41 
-  | DOUBLE_DOLLAR  -> 42 
-  | DOLLAR  -> 43 
-  | HASH  -> 44 
-  | DOT  -> 45 
-  | COLON  -> 46 
-  | SEMI_COLON  -> 47 
-  | COMMA  -> 48 
-  | KW_TEXT  -> 49 
-  | KW_STRING  -> 50 
-  | KW_CHAR  -> 51 
-  | KW_BYTE  -> 52 
-  | KW_INT  -> 53 
-  | KW_VOID  -> 54 
-  | KW_FLOAT  -> 55 
-  | IDENT _ -> 56 
-  | BYTE_LITERAL _ -> 57 
-  | STRING_LITERAL _ -> 58 
-  | FLOAT_LITERAL _ -> 59 
-  | INT_LITERAL _ -> 60 
+  | Empty  -> 0
+  | EOF  -> 1
+  | EOL  -> 2
+  | KW_COUNT  -> 3
+  | DR_UNCHECKED  -> 4
+  | DR_EXTERN  -> 5
+  | KW_EXPORT  -> 6
+  | KW_CONTINUE  -> 7
+  | KW_BREAK  -> 8
+  | KW_RETURN  -> 9
+  | KW_ELSIF  -> 10
+  | KW_ELSE  -> 11
+  | KW_OF  -> 12
+  | KW_END  -> 13
+  | KW_DO  -> 14
+  | KW_WHILE  -> 15
+  | KW_THEN  -> 16
+  | KW_IF  -> 17
+  | RARROW  -> 18
+  | RBRACKET  -> 19
+  | LBRACKET  -> 20
+  | RPAREN  -> 21
+  | LPAREN  -> 22
+  | AMP  -> 23
+  | KW_NOT  -> 24
+  | KW_AND  -> 25
+  | KW_OR  -> 26
+  | GREATER  -> 27
+  | GREATER_EQUALS  -> 28
+  | LESS  -> 29
+  | LESS_EQUALS  -> 30
+  | KW_IS  -> 31
+  | LESS_GREATER  -> 32
+  | DOUBLE_EQUALS  -> 33
+  | PERCENT  -> 34
+  | ASTERISK  -> 35
+  | FSLASH  -> 36
+  | PLUS  -> 37
+  | MINUS  -> 38
+  | COLON_EQUALS  -> 39
+  | DOUBLE_COLON  -> 40
+  | SINGLE_EQUALS  -> 41
+  | DOUBLE_DOLLAR  -> 42
+  | DOLLAR  -> 43
+  | HASH  -> 44
+  | DOT  -> 45
+  | COLON  -> 46
+  | SEMI_COLON  -> 47
+  | COMMA  -> 48
+  | KW_TEXT  -> 49
+  | KW_STRING  -> 50
+  | KW_CHAR  -> 51
+  | KW_BYTE  -> 52
+  | KW_INT  -> 53
+  | KW_VOID  -> 54
+  | KW_FLOAT  -> 55
+  | IDENT _ -> 56
+  | BYTE_LITERAL _ -> 57
+  | STRING_LITERAL _ -> 58
+  | FLOAT_LITERAL _ -> 59
+  | INT_LITERAL _ -> 60
 
 // This function maps integer indexes to symbolic token ids
-let tokenTagToTokenId (tokenIdx:int) = 
+let tokenTagToTokenId (tokenIdx:int) =
   match tokenIdx with
-  | 0 -> TOKEN_Empty 
-  | 1 -> TOKEN_EOF 
-  | 2 -> TOKEN_EOL 
-  | 3 -> TOKEN_KW_COUNT 
-  | 4 -> TOKEN_DR_UNCHECKED 
-  | 5 -> TOKEN_DR_EXTERN 
-  | 6 -> TOKEN_KW_EXPORT 
-  | 7 -> TOKEN_KW_CONTINUE 
-  | 8 -> TOKEN_KW_BREAK 
-  | 9 -> TOKEN_KW_RETURN 
-  | 10 -> TOKEN_KW_ELSIF 
-  | 11 -> TOKEN_KW_ELSE 
-  | 12 -> TOKEN_KW_OF 
-  | 13 -> TOKEN_KW_END 
-  | 14 -> TOKEN_KW_DO 
-  | 15 -> TOKEN_KW_WHILE 
-  | 16 -> TOKEN_KW_THEN 
-  | 17 -> TOKEN_KW_IF 
-  | 18 -> TOKEN_RARROW 
-  | 19 -> TOKEN_RBRACKET 
-  | 20 -> TOKEN_LBRACKET 
-  | 21 -> TOKEN_RPAREN 
-  | 22 -> TOKEN_LPAREN 
-  | 23 -> TOKEN_AMP 
-  | 24 -> TOKEN_KW_NOT 
-  | 25 -> TOKEN_KW_AND 
-  | 26 -> TOKEN_KW_OR 
-  | 27 -> TOKEN_GREATER 
-  | 28 -> TOKEN_GREATER_EQUALS 
-  | 29 -> TOKEN_LESS 
-  | 30 -> TOKEN_LESS_EQUALS 
-  | 31 -> TOKEN_KW_IS 
-  | 32 -> TOKEN_LESS_GREATER 
-  | 33 -> TOKEN_DOUBLE_EQUALS 
-  | 34 -> TOKEN_PERCENT 
-  | 35 -> TOKEN_ASTERISK 
-  | 36 -> TOKEN_FSLASH 
-  | 37 -> TOKEN_PLUS 
-  | 38 -> TOKEN_MINUS 
-  | 39 -> TOKEN_COLON_EQUALS 
-  | 40 -> TOKEN_DOUBLE_COLON 
-  | 41 -> TOKEN_SINGLE_EQUALS 
-  | 42 -> TOKEN_DOUBLE_DOLLAR 
-  | 43 -> TOKEN_DOLLAR 
-  | 44 -> TOKEN_HASH 
-  | 45 -> TOKEN_DOT 
-  | 46 -> TOKEN_COLON 
-  | 47 -> TOKEN_SEMI_COLON 
-  | 48 -> TOKEN_COMMA 
-  | 49 -> TOKEN_KW_TEXT 
-  | 50 -> TOKEN_KW_STRING 
-  | 51 -> TOKEN_KW_CHAR 
-  | 52 -> TOKEN_KW_BYTE 
-  | 53 -> TOKEN_KW_INT 
-  | 54 -> TOKEN_KW_VOID 
-  | 55 -> TOKEN_KW_FLOAT 
-  | 56 -> TOKEN_IDENT 
-  | 57 -> TOKEN_BYTE_LITERAL 
-  | 58 -> TOKEN_STRING_LITERAL 
-  | 59 -> TOKEN_FLOAT_LITERAL 
-  | 60 -> TOKEN_INT_LITERAL 
+  | 0 -> TOKEN_Empty
+  | 1 -> TOKEN_EOF
+  | 2 -> TOKEN_EOL
+  | 3 -> TOKEN_KW_COUNT
+  | 4 -> TOKEN_DR_UNCHECKED
+  | 5 -> TOKEN_DR_EXTERN
+  | 6 -> TOKEN_KW_EXPORT
+  | 7 -> TOKEN_KW_CONTINUE
+  | 8 -> TOKEN_KW_BREAK
+  | 9 -> TOKEN_KW_RETURN
+  | 10 -> TOKEN_KW_ELSIF
+  | 11 -> TOKEN_KW_ELSE
+  | 12 -> TOKEN_KW_OF
+  | 13 -> TOKEN_KW_END
+  | 14 -> TOKEN_KW_DO
+  | 15 -> TOKEN_KW_WHILE
+  | 16 -> TOKEN_KW_THEN
+  | 17 -> TOKEN_KW_IF
+  | 18 -> TOKEN_RARROW
+  | 19 -> TOKEN_RBRACKET
+  | 20 -> TOKEN_LBRACKET
+  | 21 -> TOKEN_RPAREN
+  | 22 -> TOKEN_LPAREN
+  | 23 -> TOKEN_AMP
+  | 24 -> TOKEN_KW_NOT
+  | 25 -> TOKEN_KW_AND
+  | 26 -> TOKEN_KW_OR
+  | 27 -> TOKEN_GREATER
+  | 28 -> TOKEN_GREATER_EQUALS
+  | 29 -> TOKEN_LESS
+  | 30 -> TOKEN_LESS_EQUALS
+  | 31 -> TOKEN_KW_IS
+  | 32 -> TOKEN_LESS_GREATER
+  | 33 -> TOKEN_DOUBLE_EQUALS
+  | 34 -> TOKEN_PERCENT
+  | 35 -> TOKEN_ASTERISK
+  | 36 -> TOKEN_FSLASH
+  | 37 -> TOKEN_PLUS
+  | 38 -> TOKEN_MINUS
+  | 39 -> TOKEN_COLON_EQUALS
+  | 40 -> TOKEN_DOUBLE_COLON
+  | 41 -> TOKEN_SINGLE_EQUALS
+  | 42 -> TOKEN_DOUBLE_DOLLAR
+  | 43 -> TOKEN_DOLLAR
+  | 44 -> TOKEN_HASH
+  | 45 -> TOKEN_DOT
+  | 46 -> TOKEN_COLON
+  | 47 -> TOKEN_SEMI_COLON
+  | 48 -> TOKEN_COMMA
+  | 49 -> TOKEN_KW_TEXT
+  | 50 -> TOKEN_KW_STRING
+  | 51 -> TOKEN_KW_CHAR
+  | 52 -> TOKEN_KW_BYTE
+  | 53 -> TOKEN_KW_INT
+  | 54 -> TOKEN_KW_VOID
+  | 55 -> TOKEN_KW_FLOAT
+  | 56 -> TOKEN_IDENT
+  | 57 -> TOKEN_BYTE_LITERAL
+  | 58 -> TOKEN_STRING_LITERAL
+  | 59 -> TOKEN_FLOAT_LITERAL
+  | 60 -> TOKEN_INT_LITERAL
   | 63 -> TOKEN_end_of_input
   | 61 -> TOKEN_error
   | _ -> failwith "tokenTagToTokenId: bad token"
 
 /// This function maps production indexes returned in syntax errors to strings representing the non terminal that would be produced by that production
-let prodIdxToNonTerminal (prodIdx:int) = 
+let prodIdxToNonTerminal (prodIdx:int) =
   match prodIdx with
-    | 0 -> NONTERM__startstart 
-    | 1 -> NONTERM_start 
-    | 2 -> NONTERM_program 
-    | 3 -> NONTERM_decl_list 
-    | 4 -> NONTERM_decl_list 
-    | 5 -> NONTERM_decl 
-    | 6 -> NONTERM_decl 
-    | 7 -> NONTERM_type_spec 
-    | 8 -> NONTERM_type_spec 
-    | 9 -> NONTERM_type_spec 
-    | 10 -> NONTERM_type_spec 
-    | 11 -> NONTERM_type_spec 
-    | 12 -> NONTERM_type_spec 
-    | 13 -> NONTERM_type_spec 
-    | 14 -> NONTERM_fixed_decl 
-    | 15 -> NONTERM_fixed_decl 
-    | 16 -> NONTERM_variable_decl 
-    | 17 -> NONTERM_variable_decl 
-    | 18 -> NONTERM_variable_decl 
-    | 19 -> NONTERM_variable_decl 
-    | 20 -> NONTERM_fixed_scalar_decl 
-    | 21 -> NONTERM_fixed_array_decl 
-    | 22 -> NONTERM_fixed_array_decl 
-    | 23 -> NONTERM_fixed_array_decl 
-    | 24 -> NONTERM_fixed_array_decl 
-    | 25 -> NONTERM_scalar_decl 
-    | 26 -> NONTERM_scalar_decl 
-    | 27 -> NONTERM_scalar_decl 
-    | 28 -> NONTERM_array_decl 
-    | 29 -> NONTERM_array_decl 
-    | 30 -> NONTERM_array_decl 
-    | 31 -> NONTERM_array_decl 
-    | 32 -> NONTERM_array_decl 
-    | 33 -> NONTERM_procedure_decl 
-    | 34 -> NONTERM_procedure_decl 
-    | 35 -> NONTERM_procedure_decl 
-    | 36 -> NONTERM_procedure_decl 
-    | 37 -> NONTERM_procedure_decl 
-    | 38 -> NONTERM_procedure_decl 
-    | 39 -> NONTERM_parameters 
-    | 40 -> NONTERM_parameters 
-    | 41 -> NONTERM_parameter_list 
-    | 42 -> NONTERM_parameter_list 
-    | 43 -> NONTERM_parameter 
-    | 44 -> NONTERM_parameter 
-    | 45 -> NONTERM_parameter 
-    | 46 -> NONTERM_parameter 
-    | 47 -> NONTERM_parameter 
-    | 48 -> NONTERM_parameter 
-    | 49 -> NONTERM_parameter 
-    | 50 -> NONTERM_stmt_list 
-    | 51 -> NONTERM_stmt_list 
-    | 52 -> NONTERM_stmt 
-    | 53 -> NONTERM_stmt 
-    | 54 -> NONTERM_stmt 
-    | 55 -> NONTERM_stmt 
-    | 56 -> NONTERM_stmt 
-    | 57 -> NONTERM_stmt 
-    | 58 -> NONTERM_stmt 
-    | 59 -> NONTERM_stmt 
-    | 60 -> NONTERM_sexpr 
-    | 61 -> NONTERM_while_stmt 
-    | 62 -> NONTERM_if_stmt 
-    | 63 -> NONTERM_if_stmt 
-    | 64 -> NONTERM_cond_clause_s 
-    | 65 -> NONTERM_cond_clause_s 
-    | 66 -> NONTERM_cond_clause 
-    | 67 -> NONTERM_cond_part 
-    | 68 -> NONTERM_condition 
-    | 69 -> NONTERM_else_opt 
-    | 70 -> NONTERM_compound_stmt 
-    | 71 -> NONTERM_compound_stmt 
-    | 72 -> NONTERM_break_stmt 
-    | 73 -> NONTERM_continue_stmt 
-    | 74 -> NONTERM_return_stmt 
-    | 75 -> NONTERM_return_stmt 
-    | 76 -> NONTERM_expr_list 
-    | 77 -> NONTERM_expr_list 
-    | 78 -> NONTERM_aggregate 
-    | 79 -> NONTERM_expr 
-    | 80 -> NONTERM_expr 
-    | 81 -> NONTERM_expr 
-    | 82 -> NONTERM_expr 
-    | 83 -> NONTERM_logical 
-    | 84 -> NONTERM_logical 
-    | 85 -> NONTERM_relation 
-    | 86 -> NONTERM_relation 
-    | 87 -> NONTERM_relation 
-    | 88 -> NONTERM_relational 
-    | 89 -> NONTERM_relational 
-    | 90 -> NONTERM_relational 
-    | 91 -> NONTERM_relational 
-    | 92 -> NONTERM_relational 
-    | 93 -> NONTERM_relational 
-    | 94 -> NONTERM_equation 
-    | 95 -> NONTERM_equation 
-    | 96 -> NONTERM_unary 
-    | 97 -> NONTERM_unary 
-    | 98 -> NONTERM_combinatory 
-    | 99 -> NONTERM_combinatory 
-    | 100 -> NONTERM_term 
-    | 101 -> NONTERM_term 
-    | 102 -> NONTERM_sequential 
-    | 103 -> NONTERM_sequential 
-    | 104 -> NONTERM_sequential 
-    | 105 -> NONTERM_factor 
-    | 106 -> NONTERM_factor 
-    | 107 -> NONTERM_factor 
-    | 108 -> NONTERM_primary 
-    | 109 -> NONTERM_primary 
-    | 110 -> NONTERM_primary 
-    | 111 -> NONTERM_primary 
-    | 112 -> NONTERM_qualified 
-    | 113 -> NONTERM_qualified 
-    | 114 -> NONTERM_qualified 
-    | 115 -> NONTERM_qualified 
-    | 116 -> NONTERM_paren_primary 
-    | 117 -> NONTERM_arguments 
-    | 118 -> NONTERM_arguments 
-    | 119 -> NONTERM_literal 
-    | 120 -> NONTERM_literal 
-    | 121 -> NONTERM_literal 
-    | 122 -> NONTERM_literal 
-    | 123 -> NONTERM_literal 
-    | 124 -> NONTERM_literal 
+    | 0 -> NONTERM__startstart
+    | 1 -> NONTERM_start
+    | 2 -> NONTERM_program
+    | 3 -> NONTERM_decl_list
+    | 4 -> NONTERM_decl_list
+    | 5 -> NONTERM_decl
+    | 6 -> NONTERM_decl
+    | 7 -> NONTERM_type_spec
+    | 8 -> NONTERM_type_spec
+    | 9 -> NONTERM_type_spec
+    | 10 -> NONTERM_type_spec
+    | 11 -> NONTERM_type_spec
+    | 12 -> NONTERM_type_spec
+    | 13 -> NONTERM_type_spec
+    | 14 -> NONTERM_fixed_decl
+    | 15 -> NONTERM_fixed_decl
+    | 16 -> NONTERM_variable_decl
+    | 17 -> NONTERM_variable_decl
+    | 18 -> NONTERM_variable_decl
+    | 19 -> NONTERM_variable_decl
+    | 20 -> NONTERM_fixed_scalar_decl
+    | 21 -> NONTERM_fixed_array_decl
+    | 22 -> NONTERM_fixed_array_decl
+    | 23 -> NONTERM_fixed_array_decl
+    | 24 -> NONTERM_fixed_array_decl
+    | 25 -> NONTERM_scalar_decl
+    | 26 -> NONTERM_scalar_decl
+    | 27 -> NONTERM_scalar_decl
+    | 28 -> NONTERM_array_decl
+    | 29 -> NONTERM_array_decl
+    | 30 -> NONTERM_array_decl
+    | 31 -> NONTERM_array_decl
+    | 32 -> NONTERM_array_decl
+    | 33 -> NONTERM_procedure_decl
+    | 34 -> NONTERM_procedure_decl
+    | 35 -> NONTERM_procedure_decl
+    | 36 -> NONTERM_procedure_decl
+    | 37 -> NONTERM_procedure_decl
+    | 38 -> NONTERM_procedure_decl
+    | 39 -> NONTERM_parameters
+    | 40 -> NONTERM_parameters
+    | 41 -> NONTERM_parameter_list
+    | 42 -> NONTERM_parameter_list
+    | 43 -> NONTERM_parameter
+    | 44 -> NONTERM_parameter
+    | 45 -> NONTERM_parameter
+    | 46 -> NONTERM_parameter
+    | 47 -> NONTERM_parameter
+    | 48 -> NONTERM_parameter
+    | 49 -> NONTERM_parameter
+    | 50 -> NONTERM_stmt_list
+    | 51 -> NONTERM_stmt_list
+    | 52 -> NONTERM_stmt
+    | 53 -> NONTERM_stmt
+    | 54 -> NONTERM_stmt
+    | 55 -> NONTERM_stmt
+    | 56 -> NONTERM_stmt
+    | 57 -> NONTERM_stmt
+    | 58 -> NONTERM_stmt
+    | 59 -> NONTERM_stmt
+    | 60 -> NONTERM_sexpr
+    | 61 -> NONTERM_while_stmt
+    | 62 -> NONTERM_if_stmt
+    | 63 -> NONTERM_if_stmt
+    | 64 -> NONTERM_cond_clause_s
+    | 65 -> NONTERM_cond_clause_s
+    | 66 -> NONTERM_cond_clause
+    | 67 -> NONTERM_cond_part
+    | 68 -> NONTERM_condition
+    | 69 -> NONTERM_else_opt
+    | 70 -> NONTERM_compound_stmt
+    | 71 -> NONTERM_compound_stmt
+    | 72 -> NONTERM_break_stmt
+    | 73 -> NONTERM_continue_stmt
+    | 74 -> NONTERM_return_stmt
+    | 75 -> NONTERM_return_stmt
+    | 76 -> NONTERM_expr_list
+    | 77 -> NONTERM_expr_list
+    | 78 -> NONTERM_aggregate
+    | 79 -> NONTERM_expr
+    | 80 -> NONTERM_expr
+    | 81 -> NONTERM_expr
+    | 82 -> NONTERM_expr
+    | 83 -> NONTERM_logical
+    | 84 -> NONTERM_logical
+    | 85 -> NONTERM_relation
+    | 86 -> NONTERM_relation
+    | 87 -> NONTERM_relation
+    | 88 -> NONTERM_relational
+    | 89 -> NONTERM_relational
+    | 90 -> NONTERM_relational
+    | 91 -> NONTERM_relational
+    | 92 -> NONTERM_relational
+    | 93 -> NONTERM_relational
+    | 94 -> NONTERM_equation
+    | 95 -> NONTERM_equation
+    | 96 -> NONTERM_unary
+    | 97 -> NONTERM_unary
+    | 98 -> NONTERM_combinatory
+    | 99 -> NONTERM_combinatory
+    | 100 -> NONTERM_term
+    | 101 -> NONTERM_term
+    | 102 -> NONTERM_sequential
+    | 103 -> NONTERM_sequential
+    | 104 -> NONTERM_sequential
+    | 105 -> NONTERM_factor
+    | 106 -> NONTERM_factor
+    | 107 -> NONTERM_factor
+    | 108 -> NONTERM_primary
+    | 109 -> NONTERM_primary
+    | 110 -> NONTERM_primary
+    | 111 -> NONTERM_primary
+    | 112 -> NONTERM_qualified
+    | 113 -> NONTERM_qualified
+    | 114 -> NONTERM_qualified
+    | 115 -> NONTERM_qualified
+    | 116 -> NONTERM_paren_primary
+    | 117 -> NONTERM_arguments
+    | 118 -> NONTERM_arguments
+    | 119 -> NONTERM_literal
+    | 120 -> NONTERM_literal
+    | 121 -> NONTERM_literal
+    | 122 -> NONTERM_literal
+    | 123 -> NONTERM_literal
+    | 124 -> NONTERM_literal
     | _ -> failwith "prodIdxToNonTerminal: bad production index"
 
-let _fsyacc_endOfInputTag = 63 
+let _fsyacc_endOfInputTag = 63
 let _fsyacc_tagOfErrorTerminal = 61
 
 // This function gets the name of a token as a string
-let token_to_string (t:token) = 
-  match t with 
-  | Empty  -> "Empty" 
-  | EOF  -> "EOF" 
-  | EOL  -> "EOL" 
-  | KW_COUNT  -> "KW_COUNT" 
-  | DR_UNCHECKED  -> "DR_UNCHECKED" 
-  | DR_EXTERN  -> "DR_EXTERN" 
-  | KW_EXPORT  -> "KW_EXPORT" 
-  | KW_CONTINUE  -> "KW_CONTINUE" 
-  | KW_BREAK  -> "KW_BREAK" 
-  | KW_RETURN  -> "KW_RETURN" 
-  | KW_ELSIF  -> "KW_ELSIF" 
-  | KW_ELSE  -> "KW_ELSE" 
-  | KW_OF  -> "KW_OF" 
-  | KW_END  -> "KW_END" 
-  | KW_DO  -> "KW_DO" 
-  | KW_WHILE  -> "KW_WHILE" 
-  | KW_THEN  -> "KW_THEN" 
-  | KW_IF  -> "KW_IF" 
-  | RARROW  -> "RARROW" 
-  | RBRACKET  -> "RBRACKET" 
-  | LBRACKET  -> "LBRACKET" 
-  | RPAREN  -> "RPAREN" 
-  | LPAREN  -> "LPAREN" 
-  | AMP  -> "AMP" 
-  | KW_NOT  -> "KW_NOT" 
-  | KW_AND  -> "KW_AND" 
-  | KW_OR  -> "KW_OR" 
-  | GREATER  -> "GREATER" 
-  | GREATER_EQUALS  -> "GREATER_EQUALS" 
-  | LESS  -> "LESS" 
-  | LESS_EQUALS  -> "LESS_EQUALS" 
-  | KW_IS  -> "KW_IS" 
-  | LESS_GREATER  -> "LESS_GREATER" 
-  | DOUBLE_EQUALS  -> "DOUBLE_EQUALS" 
-  | PERCENT  -> "PERCENT" 
-  | ASTERISK  -> "ASTERISK" 
-  | FSLASH  -> "FSLASH" 
-  | PLUS  -> "PLUS" 
-  | MINUS  -> "MINUS" 
-  | COLON_EQUALS  -> "COLON_EQUALS" 
-  | DOUBLE_COLON  -> "DOUBLE_COLON" 
-  | SINGLE_EQUALS  -> "SINGLE_EQUALS" 
-  | DOUBLE_DOLLAR  -> "DOUBLE_DOLLAR" 
-  | DOLLAR  -> "DOLLAR" 
-  | HASH  -> "HASH" 
-  | DOT  -> "DOT" 
-  | COLON  -> "COLON" 
-  | SEMI_COLON  -> "SEMI_COLON" 
-  | COMMA  -> "COMMA" 
-  | KW_TEXT  -> "KW_TEXT" 
-  | KW_STRING  -> "KW_STRING" 
-  | KW_CHAR  -> "KW_CHAR" 
-  | KW_BYTE  -> "KW_BYTE" 
-  | KW_INT  -> "KW_INT" 
-  | KW_VOID  -> "KW_VOID" 
-  | KW_FLOAT  -> "KW_FLOAT" 
-  | IDENT _ -> "IDENT" 
-  | BYTE_LITERAL _ -> "BYTE_LITERAL" 
-  | STRING_LITERAL _ -> "STRING_LITERAL" 
-  | FLOAT_LITERAL _ -> "FLOAT_LITERAL" 
-  | INT_LITERAL _ -> "INT_LITERAL" 
+let token_to_string (t:token) =
+  match t with
+  | Empty  -> "Empty"
+  | EOF  -> "EOF"
+  | EOL  -> "EOL"
+  | KW_COUNT  -> "KW_COUNT"
+  | DR_UNCHECKED  -> "DR_UNCHECKED"
+  | DR_EXTERN  -> "DR_EXTERN"
+  | KW_EXPORT  -> "KW_EXPORT"
+  | KW_CONTINUE  -> "KW_CONTINUE"
+  | KW_BREAK  -> "KW_BREAK"
+  | KW_RETURN  -> "KW_RETURN"
+  | KW_ELSIF  -> "KW_ELSIF"
+  | KW_ELSE  -> "KW_ELSE"
+  | KW_OF  -> "KW_OF"
+  | KW_END  -> "KW_END"
+  | KW_DO  -> "KW_DO"
+  | KW_WHILE  -> "KW_WHILE"
+  | KW_THEN  -> "KW_THEN"
+  | KW_IF  -> "KW_IF"
+  | RARROW  -> "RARROW"
+  | RBRACKET  -> "RBRACKET"
+  | LBRACKET  -> "LBRACKET"
+  | RPAREN  -> "RPAREN"
+  | LPAREN  -> "LPAREN"
+  | AMP  -> "AMP"
+  | KW_NOT  -> "KW_NOT"
+  | KW_AND  -> "KW_AND"
+  | KW_OR  -> "KW_OR"
+  | GREATER  -> "GREATER"
+  | GREATER_EQUALS  -> "GREATER_EQUALS"
+  | LESS  -> "LESS"
+  | LESS_EQUALS  -> "LESS_EQUALS"
+  | KW_IS  -> "KW_IS"
+  | LESS_GREATER  -> "LESS_GREATER"
+  | DOUBLE_EQUALS  -> "DOUBLE_EQUALS"
+  | PERCENT  -> "PERCENT"
+  | ASTERISK  -> "ASTERISK"
+  | FSLASH  -> "FSLASH"
+  | PLUS  -> "PLUS"
+  | MINUS  -> "MINUS"
+  | COLON_EQUALS  -> "COLON_EQUALS"
+  | DOUBLE_COLON  -> "DOUBLE_COLON"
+  | SINGLE_EQUALS  -> "SINGLE_EQUALS"
+  | DOUBLE_DOLLAR  -> "DOUBLE_DOLLAR"
+  | DOLLAR  -> "DOLLAR"
+  | HASH  -> "HASH"
+  | DOT  -> "DOT"
+  | COLON  -> "COLON"
+  | SEMI_COLON  -> "SEMI_COLON"
+  | COMMA  -> "COMMA"
+  | KW_TEXT  -> "KW_TEXT"
+  | KW_STRING  -> "KW_STRING"
+  | KW_CHAR  -> "KW_CHAR"
+  | KW_BYTE  -> "KW_BYTE"
+  | KW_INT  -> "KW_INT"
+  | KW_VOID  -> "KW_VOID"
+  | KW_FLOAT  -> "KW_FLOAT"
+  | IDENT _ -> "IDENT"
+  | BYTE_LITERAL _ -> "BYTE_LITERAL"
+  | STRING_LITERAL _ -> "STRING_LITERAL"
+  | FLOAT_LITERAL _ -> "FLOAT_LITERAL"
+  | INT_LITERAL _ -> "INT_LITERAL"
 
 // This function gets the data carried by a token as an object
-let _fsyacc_dataOfToken (t:token) = 
-  match t with 
-  | Empty  -> (null : System.Object) 
-  | EOF  -> (null : System.Object) 
-  | EOL  -> (null : System.Object) 
-  | KW_COUNT  -> (null : System.Object) 
-  | DR_UNCHECKED  -> (null : System.Object) 
-  | DR_EXTERN  -> (null : System.Object) 
-  | KW_EXPORT  -> (null : System.Object) 
-  | KW_CONTINUE  -> (null : System.Object) 
-  | KW_BREAK  -> (null : System.Object) 
-  | KW_RETURN  -> (null : System.Object) 
-  | KW_ELSIF  -> (null : System.Object) 
-  | KW_ELSE  -> (null : System.Object) 
-  | KW_OF  -> (null : System.Object) 
-  | KW_END  -> (null : System.Object) 
-  | KW_DO  -> (null : System.Object) 
-  | KW_WHILE  -> (null : System.Object) 
-  | KW_THEN  -> (null : System.Object) 
-  | KW_IF  -> (null : System.Object) 
-  | RARROW  -> (null : System.Object) 
-  | RBRACKET  -> (null : System.Object) 
-  | LBRACKET  -> (null : System.Object) 
-  | RPAREN  -> (null : System.Object) 
-  | LPAREN  -> (null : System.Object) 
-  | AMP  -> (null : System.Object) 
-  | KW_NOT  -> (null : System.Object) 
-  | KW_AND  -> (null : System.Object) 
-  | KW_OR  -> (null : System.Object) 
-  | GREATER  -> (null : System.Object) 
-  | GREATER_EQUALS  -> (null : System.Object) 
-  | LESS  -> (null : System.Object) 
-  | LESS_EQUALS  -> (null : System.Object) 
-  | KW_IS  -> (null : System.Object) 
-  | LESS_GREATER  -> (null : System.Object) 
-  | DOUBLE_EQUALS  -> (null : System.Object) 
-  | PERCENT  -> (null : System.Object) 
-  | ASTERISK  -> (null : System.Object) 
-  | FSLASH  -> (null : System.Object) 
-  | PLUS  -> (null : System.Object) 
-  | MINUS  -> (null : System.Object) 
-  | COLON_EQUALS  -> (null : System.Object) 
-  | DOUBLE_COLON  -> (null : System.Object) 
-  | SINGLE_EQUALS  -> (null : System.Object) 
-  | DOUBLE_DOLLAR  -> (null : System.Object) 
-  | DOLLAR  -> (null : System.Object) 
-  | HASH  -> (null : System.Object) 
-  | DOT  -> (null : System.Object) 
-  | COLON  -> (null : System.Object) 
-  | SEMI_COLON  -> (null : System.Object) 
-  | COMMA  -> (null : System.Object) 
-  | KW_TEXT  -> (null : System.Object) 
-  | KW_STRING  -> (null : System.Object) 
-  | KW_CHAR  -> (null : System.Object) 
-  | KW_BYTE  -> (null : System.Object) 
-  | KW_INT  -> (null : System.Object) 
-  | KW_VOID  -> (null : System.Object) 
-  | KW_FLOAT  -> (null : System.Object) 
-  | IDENT _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | BYTE_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | STRING_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | FLOAT_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
-  | INT_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x 
+let _fsyacc_dataOfToken (t:token) =
+  match t with
+  | Empty  -> (null : System.Object)
+  | EOF  -> (null : System.Object)
+  | EOL  -> (null : System.Object)
+  | KW_COUNT  -> (null : System.Object)
+  | DR_UNCHECKED  -> (null : System.Object)
+  | DR_EXTERN  -> (null : System.Object)
+  | KW_EXPORT  -> (null : System.Object)
+  | KW_CONTINUE  -> (null : System.Object)
+  | KW_BREAK  -> (null : System.Object)
+  | KW_RETURN  -> (null : System.Object)
+  | KW_ELSIF  -> (null : System.Object)
+  | KW_ELSE  -> (null : System.Object)
+  | KW_OF  -> (null : System.Object)
+  | KW_END  -> (null : System.Object)
+  | KW_DO  -> (null : System.Object)
+  | KW_WHILE  -> (null : System.Object)
+  | KW_THEN  -> (null : System.Object)
+  | KW_IF  -> (null : System.Object)
+  | RARROW  -> (null : System.Object)
+  | RBRACKET  -> (null : System.Object)
+  | LBRACKET  -> (null : System.Object)
+  | RPAREN  -> (null : System.Object)
+  | LPAREN  -> (null : System.Object)
+  | AMP  -> (null : System.Object)
+  | KW_NOT  -> (null : System.Object)
+  | KW_AND  -> (null : System.Object)
+  | KW_OR  -> (null : System.Object)
+  | GREATER  -> (null : System.Object)
+  | GREATER_EQUALS  -> (null : System.Object)
+  | LESS  -> (null : System.Object)
+  | LESS_EQUALS  -> (null : System.Object)
+  | KW_IS  -> (null : System.Object)
+  | LESS_GREATER  -> (null : System.Object)
+  | DOUBLE_EQUALS  -> (null : System.Object)
+  | PERCENT  -> (null : System.Object)
+  | ASTERISK  -> (null : System.Object)
+  | FSLASH  -> (null : System.Object)
+  | PLUS  -> (null : System.Object)
+  | MINUS  -> (null : System.Object)
+  | COLON_EQUALS  -> (null : System.Object)
+  | DOUBLE_COLON  -> (null : System.Object)
+  | SINGLE_EQUALS  -> (null : System.Object)
+  | DOUBLE_DOLLAR  -> (null : System.Object)
+  | DOLLAR  -> (null : System.Object)
+  | HASH  -> (null : System.Object)
+  | DOT  -> (null : System.Object)
+  | COLON  -> (null : System.Object)
+  | SEMI_COLON  -> (null : System.Object)
+  | COMMA  -> (null : System.Object)
+  | KW_TEXT  -> (null : System.Object)
+  | KW_STRING  -> (null : System.Object)
+  | KW_CHAR  -> (null : System.Object)
+  | KW_BYTE  -> (null : System.Object)
+  | KW_INT  -> (null : System.Object)
+  | KW_VOID  -> (null : System.Object)
+  | KW_FLOAT  -> (null : System.Object)
+  | IDENT _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | BYTE_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | STRING_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | FLOAT_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
+  | INT_LITERAL _fsyacc_x -> Microsoft.FSharp.Core.Operators.box _fsyacc_x
 let _fsyacc_gotos = [| 0us; 65535us; 1us; 65535us; 0us; 1us; 1us; 65535us; 0us; 2us; 1us; 65535us; 0us; 3us; 9us; 65535us; 0us; 6us; 3us; 5us; 123us; 128us; 124us; 128us; 125us; 128us; 139us; 128us; 151us; 128us; 155us; 128us; 157us; 128us; 12us; 65535us; 30us; 31us; 36us; 37us; 44us; 45us; 55us; 56us; 60us; 61us; 74us; 75us; 78us; 79us; 89us; 90us; 100us; 101us; 110us; 111us; 113us; 116us; 114us; 115us; 9us; 65535us; 0us; 20us; 3us; 20us; 123us; 20us; 124us; 20us; 125us; 20us; 139us; 20us; 151us; 20us; 155us; 20us; 157us; 20us; 9us; 65535us; 0us; 7us; 3us; 7us; 123us; 7us; 124us; 7us; 125us; 7us; 139us; 7us; 151us; 7us; 155us; 7us; 157us; 7us; 9us; 65535us; 0us; 16us; 3us; 16us; 123us; 16us; 124us; 16us; 125us; 16us; 139us; 16us; 151us; 16us; 155us; 16us; 157us; 16us; 9us; 65535us; 0us; 17us; 3us; 17us; 123us; 17us; 124us; 17us; 125us; 17us; 139us; 17us; 151us; 17us; 155us; 17us; 157us; 17us; 9us; 65535us; 0us; 18us; 3us; 18us; 123us; 18us; 124us; 18us; 125us; 18us; 139us; 18us; 151us; 18us; 155us; 18us; 157us; 18us; 9us; 65535us; 0us; 19us; 3us; 19us; 123us; 19us; 124us; 19us; 125us; 19us; 139us; 19us; 151us; 19us; 155us; 19us; 157us; 19us; 9us; 65535us; 0us; 21us; 3us; 21us; 123us; 21us; 124us; 21us; 125us; 21us; 139us; 21us; 151us; 21us; 155us; 21us; 157us; 21us; 3us; 65535us; 71us; 72us; 86us; 87us; 97us; 98us; 3us; 65535us; 71us; 103us; 86us; 103us; 97us; 103us; 4us; 65535us; 71us; 107us; 86us; 107us; 97us; 107us; 105us; 106us; 3us; 65535us; 151us; 123us; 155us; 124us; 157us; 125us; 7us; 65535us; 123us; 126us; 124us; 126us; 125us; 126us; 139us; 140us; 151us; 127us; 155us; 127us; 157us; 127us; 7us; 65535us; 123us; 129us; 124us; 129us; 125us; 129us; 139us; 129us; 151us; 129us; 155us; 129us; 157us; 129us; 7us; 65535us; 123us; 132us; 124us; 132us; 125us; 132us; 139us; 132us; 151us; 132us; 155us; 132us; 157us; 132us; 7us; 65535us; 123us; 131us; 124us; 131us; 125us; 131us; 139us; 131us; 151us; 131us; 155us; 131us; 157us; 131us; 1us; 65535us; 141us; 142us; 2us; 65535us; 141us; 148us; 149us; 150us; 2us; 65535us; 141us; 151us; 149us; 151us; 2us; 65535us; 141us; 152us; 149us; 152us; 1us; 65535us; 142us; 145us; 12us; 65535us; 73us; 81us; 75us; 76us; 77us; 82us; 79us; 80us; 90us; 91us; 123us; 130us; 124us; 130us; 125us; 130us; 139us; 130us; 151us; 130us; 155us; 130us; 157us; 130us; 7us; 65535us; 123us; 134us; 124us; 134us; 125us; 134us; 139us; 134us; 151us; 134us; 155us; 134us; 157us; 134us; 7us; 65535us; 123us; 135us; 124us; 135us; 125us; 135us; 139us; 135us; 151us; 135us; 155us; 135us; 157us; 135us; 7us; 65535us; 123us; 133us; 124us; 133us; 125us; 133us; 139us; 133us; 151us; 133us; 155us; 133us; 157us; 133us; 3us; 65535us; 71us; 170us; 175us; 170us; 176us; 170us; 6us; 65535us; 24us; 33us; 38us; 39us; 41us; 42us; 50us; 63us; 65us; 66us; 68us; 69us; 27us; 65535us; 24us; 25us; 27us; 28us; 47us; 48us; 50us; 51us; 53us; 58us; 71us; 174us; 123us; 136us; 124us; 136us; 125us; 136us; 138us; 139us; 139us; 136us; 141us; 154us; 149us; 154us; 151us; 136us; 155us; 136us; 157us; 136us; 166us; 167us; 171us; 172us; 175us; 173us; 176us; 174us; 189us; 179us; 190us; 180us; 192us; 181us; 228us; 182us; 230us; 185us; 236us; 183us; 238us; 184us; 19us; 65535us; 25us; 186us; 28us; 186us; 48us; 186us; 51us; 186us; 58us; 186us; 136us; 186us; 139us; 186us; 154us; 186us; 167us; 186us; 172us; 186us; 173us; 186us; 174us; 186us; 179us; 186us; 180us; 186us; 181us; 186us; 182us; 186us; 183us; 186us; 184us; 186us; 185us; 186us; 29us; 65535us; 24us; 178us; 27us; 178us; 47us; 178us; 50us; 178us; 53us; 178us; 71us; 178us; 123us; 178us; 124us; 178us; 125us; 178us; 138us; 178us; 139us; 178us; 141us; 178us; 149us; 178us; 151us; 178us; 155us; 178us; 157us; 178us; 166us; 178us; 171us; 178us; 175us; 178us; 176us; 178us; 186us; 187us; 189us; 178us; 190us; 178us; 192us; 178us; 198us; 199us; 228us; 178us; 230us; 178us; 236us; 178us; 238us; 178us; 1us; 65535us; 195us; 196us; 30us; 65535us; 24us; 195us; 27us; 195us; 47us; 195us; 50us; 195us; 53us; 195us; 71us; 195us; 123us; 195us; 124us; 195us; 125us; 195us; 138us; 195us; 139us; 195us; 141us; 195us; 149us; 195us; 151us; 195us; 155us; 195us; 157us; 195us; 166us; 195us; 171us; 195us; 175us; 195us; 176us; 195us; 186us; 195us; 189us; 195us; 190us; 195us; 192us; 195us; 196us; 197us; 198us; 195us; 228us; 195us; 230us; 195us; 236us; 195us; 238us; 195us; 32us; 65535us; 24us; 222us; 27us; 222us; 47us; 222us; 50us; 222us; 53us; 222us; 71us; 222us; 123us; 222us; 124us; 222us; 125us; 222us; 138us; 222us; 139us; 222us; 141us; 222us; 149us; 222us; 151us; 222us; 155us; 222us; 157us; 222us; 166us; 222us; 171us; 222us; 175us; 222us; 176us; 222us; 186us; 222us; 189us; 222us; 190us; 222us; 192us; 222us; 196us; 222us; 198us; 222us; 207us; 222us; 214us; 222us; 228us; 222us; 230us; 222us; 236us; 222us; 238us; 222us; 2us; 65535us; 195us; 207us; 197us; 207us; 31us; 65535us; 24us; 206us; 27us; 206us; 47us; 206us; 50us; 206us; 53us; 206us; 71us; 206us; 123us; 206us; 124us; 206us; 125us; 206us; 138us; 206us; 139us; 206us; 141us; 206us; 149us; 206us; 151us; 206us; 155us; 206us; 157us; 206us; 166us; 206us; 171us; 206us; 175us; 206us; 176us; 206us; 186us; 206us; 189us; 206us; 190us; 206us; 192us; 206us; 196us; 206us; 198us; 206us; 207us; 208us; 228us; 206us; 230us; 206us; 236us; 206us; 238us; 206us; 2us; 65535us; 206us; 214us; 208us; 214us; 32us; 65535us; 24us; 213us; 27us; 213us; 47us; 213us; 50us; 213us; 53us; 213us; 71us; 213us; 123us; 213us; 124us; 213us; 125us; 213us; 138us; 213us; 139us; 213us; 141us; 213us; 149us; 213us; 151us; 213us; 155us; 213us; 157us; 213us; 166us; 213us; 171us; 213us; 175us; 213us; 176us; 213us; 186us; 213us; 189us; 213us; 190us; 213us; 192us; 213us; 196us; 213us; 198us; 213us; 207us; 213us; 214us; 215us; 228us; 213us; 230us; 213us; 236us; 213us; 238us; 213us; 34us; 65535us; 24us; 219us; 27us; 219us; 47us; 219us; 50us; 219us; 53us; 219us; 71us; 219us; 123us; 219us; 124us; 219us; 125us; 219us; 138us; 219us; 139us; 219us; 141us; 219us; 149us; 219us; 151us; 219us; 155us; 219us; 157us; 219us; 166us; 219us; 171us; 219us; 175us; 219us; 176us; 219us; 186us; 219us; 189us; 219us; 190us; 219us; 192us; 219us; 196us; 219us; 198us; 219us; 207us; 219us; 214us; 219us; 220us; 221us; 222us; 223us; 228us; 219us; 230us; 219us; 236us; 219us; 238us; 219us; 34us; 65535us; 24us; 226us; 27us; 226us; 47us; 226us; 50us; 226us; 53us; 226us; 71us; 226us; 123us; 226us; 124us; 226us; 125us; 226us; 138us; 226us; 139us; 226us; 141us; 226us; 149us; 226us; 151us; 226us; 155us; 226us; 157us; 226us; 166us; 226us; 171us; 226us; 175us; 226us; 176us; 226us; 186us; 226us; 189us; 226us; 190us; 226us; 192us; 226us; 196us; 226us; 198us; 226us; 207us; 226us; 214us; 226us; 220us; 226us; 222us; 226us; 228us; 226us; 230us; 226us; 236us; 226us; 238us; 226us; 34us; 65535us; 24us; 227us; 27us; 227us; 47us; 227us; 50us; 227us; 53us; 227us; 71us; 227us; 123us; 227us; 124us; 227us; 125us; 227us; 138us; 227us; 139us; 227us; 141us; 227us; 149us; 227us; 151us; 227us; 155us; 227us; 157us; 227us; 166us; 227us; 171us; 227us; 175us; 227us; 176us; 227us; 186us; 227us; 189us; 227us; 190us; 227us; 192us; 227us; 196us; 227us; 198us; 227us; 207us; 227us; 214us; 227us; 220us; 227us; 222us; 227us; 228us; 227us; 230us; 227us; 236us; 227us; 238us; 227us; 1us; 65535us; 230us; 231us; 34us; 65535us; 24us; 224us; 27us; 224us; 47us; 224us; 50us; 224us; 53us; 224us; 71us; 224us; 123us; 224us; 124us; 224us; 125us; 224us; 138us; 224us; 139us; 224us; 141us; 224us; 149us; 224us; 151us; 224us; 155us; 224us; 157us; 224us; 166us; 224us; 171us; 224us; 175us; 224us; 176us; 224us; 186us; 224us; 189us; 224us; 190us; 224us; 192us; 224us; 196us; 224us; 198us; 224us; 207us; 224us; 214us; 224us; 220us; 224us; 222us; 224us; 228us; 224us; 230us; 224us; 236us; 224us; 238us; 224us; |]
 let _fsyacc_sparseGotoTableRowOffsets = [|0us; 1us; 3us; 5us; 7us; 17us; 30us; 40us; 50us; 60us; 70us; 80us; 90us; 100us; 104us; 108us; 113us; 117us; 125us; 133us; 141us; 149us; 151us; 154us; 157us; 160us; 162us; 175us; 183us; 191us; 199us; 203us; 210us; 238us; 258us; 288us; 290us; 321us; 354us; 357us; 389us; 392us; 425us; 460us; 495us; 530us; 532us; |]
 let _fsyacc_stateToProdIdxsTableElements = [| 1us; 0us; 1us; 0us; 1us; 1us; 2us; 2us; 3us; 1us; 2us; 1us; 3us; 1us; 4us; 1us; 5us; 1us; 6us; 1us; 7us; 1us; 8us; 1us; 9us; 1us; 10us; 1us; 11us; 1us; 12us; 1us; 13us; 1us; 14us; 1us; 15us; 1us; 16us; 1us; 17us; 1us; 18us; 1us; 19us; 17us; 20us; 21us; 22us; 23us; 24us; 25us; 26us; 27us; 28us; 29us; 30us; 31us; 32us; 33us; 34us; 35us; 36us; 24us; 20us; 21us; 22us; 23us; 24us; 25us; 26us; 27us; 28us; 29us; 30us; 31us; 32us; 33us; 34us; 35us; 36us; 81us; 82us; 109us; 112us; 113us; 114us; 115us; 9us; 20us; 21us; 22us; 23us; 24us; 33us; 34us; 35us; 36us; 2us; 20us; 80us; 1us; 20us; 3us; 21us; 23us; 24us; 3us; 21us; 24us; 80us; 2us; 21us; 24us; 2us; 21us; 24us; 2us; 21us; 24us; 1us; 21us; 1us; 22us; 1us; 22us; 1us; 23us; 1us; 23us; 1us; 23us; 1us; 23us; 1us; 23us; 1us; 23us; 1us; 24us; 1us; 24us; 1us; 24us; 6us; 25us; 26us; 28us; 29us; 31us; 32us; 2us; 25us; 26us; 1us; 25us; 1us; 26us; 2us; 26us; 80us; 1us; 26us; 2us; 27us; 30us; 2us; 27us; 80us; 1us; 27us; 4us; 28us; 29us; 31us; 32us; 2us; 28us; 31us; 2us; 28us; 31us; 2us; 28us; 31us; 1us; 28us; 3us; 29us; 32us; 80us; 2us; 29us; 32us; 2us; 29us; 32us; 2us; 29us; 32us; 1us; 29us; 1us; 30us; 1us; 30us; 1us; 31us; 1us; 31us; 1us; 31us; 1us; 32us; 1us; 32us; 1us; 32us; 6us; 33us; 34us; 35us; 36us; 78us; 116us; 2us; 33us; 35us; 2us; 33us; 35us; 1us; 33us; 1us; 33us; 1us; 33us; 2us; 34us; 36us; 1us; 34us; 1us; 34us; 1us; 34us; 1us; 35us; 1us; 36us; 1us; 37us; 1us; 37us; 1us; 37us; 1us; 37us; 1us; 37us; 1us; 37us; 1us; 37us; 1us; 37us; 1us; 37us; 1us; 38us; 3us; 38us; 123us; 124us; 1us; 38us; 1us; 38us; 1us; 38us; 1us; 38us; 1us; 38us; 1us; 38us; 1us; 38us; 1us; 38us; 1us; 38us; 2us; 39us; 41us; 1us; 40us; 1us; 41us; 1us; 41us; 1us; 42us; 7us; 43us; 44us; 45us; 46us; 47us; 48us; 49us; 14us; 43us; 44us; 45us; 46us; 47us; 48us; 49us; 81us; 82us; 109us; 112us; 113us; 114us; 115us; 7us; 43us; 44us; 45us; 46us; 47us; 48us; 49us; 1us; 43us; 2us; 44us; 45us; 2us; 44us; 45us; 1us; 44us; 1us; 44us; 1us; 45us; 2us; 46us; 48us; 2us; 47us; 49us; 1us; 48us; 1us; 48us; 1us; 49us; 1us; 49us; 2us; 50us; 66us; 2us; 50us; 69us; 2us; 50us; 70us; 1us; 50us; 1us; 51us; 1us; 52us; 1us; 53us; 1us; 54us; 1us; 55us; 1us; 56us; 1us; 57us; 1us; 58us; 1us; 59us; 2us; 60us; 80us; 1us; 60us; 1us; 61us; 2us; 61us; 80us; 1us; 61us; 2us; 62us; 63us; 3us; 62us; 63us; 65us; 1us; 62us; 1us; 62us; 1us; 63us; 1us; 63us; 1us; 63us; 1us; 64us; 1us; 65us; 1us; 65us; 1us; 66us; 1us; 67us; 1us; 67us; 2us; 68us; 80us; 1us; 69us; 2us; 70us; 71us; 2us; 70us; 71us; 1us; 70us; 1us; 70us; 1us; 71us; 1us; 71us; 1us; 72us; 1us; 72us; 1us; 73us; 1us; 73us; 2us; 74us; 75us; 2us; 74us; 80us; 1us; 74us; 1us; 75us; 2us; 76us; 78us; 1us; 76us; 2us; 76us; 80us; 2us; 77us; 80us; 3us; 77us; 80us; 116us; 1us; 78us; 2us; 78us; 116us; 1us; 78us; 1us; 79us; 2us; 80us; 81us; 3us; 80us; 82us; 112us; 2us; 80us; 82us; 2us; 80us; 112us; 2us; 80us; 116us; 2us; 80us; 117us; 2us; 80us; 118us; 1us; 80us; 1us; 80us; 7us; 81us; 82us; 109us; 112us; 113us; 114us; 115us; 1us; 81us; 2us; 82us; 112us; 2us; 82us; 112us; 1us; 82us; 1us; 83us; 1us; 84us; 3us; 85us; 86us; 95us; 1us; 86us; 2us; 86us; 95us; 1us; 87us; 1us; 87us; 1us; 88us; 1us; 89us; 1us; 90us; 1us; 91us; 1us; 92us; 1us; 93us; 2us; 94us; 101us; 1us; 95us; 2us; 95us; 101us; 1us; 96us; 1us; 97us; 1us; 98us; 1us; 99us; 1us; 100us; 1us; 101us; 1us; 101us; 1us; 102us; 1us; 103us; 1us; 104us; 1us; 105us; 1us; 106us; 1us; 106us; 1us; 107us; 1us; 107us; 1us; 108us; 5us; 109us; 112us; 113us; 114us; 115us; 1us; 110us; 1us; 111us; 1us; 112us; 1us; 112us; 2us; 113us; 114us; 2us; 113us; 117us; 1us; 113us; 1us; 114us; 1us; 115us; 1us; 115us; 1us; 116us; 1us; 116us; 1us; 117us; 1us; 119us; 1us; 120us; 1us; 121us; 1us; 122us; 2us; 123us; 124us; 1us; 123us; 1us; 123us; 1us; 124us; 1us; 124us; |]
@@ -603,7 +603,7 @@ let _fsyacc_actionTableRowOffsets = [|0us; 5us; 6us; 7us; 13us; 14us; 15us; 16us
 let _fsyacc_reductionSymbolCounts = [|1us; 1us; 2us; 2us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 4us; 8us; 4us; 9us; 10us; 4us; 6us; 4us; 7us; 8us; 4us; 9us; 10us; 8us; 7us; 6us; 5us; 9us; 10us; 1us; 1us; 3us; 1us; 3us; 6us; 5us; 3us; 3us; 5us; 5us; 2us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 2us; 3us; 4us; 5us; 1us; 3us; 2us; 2us; 1us; 2us; 5us; 4us; 2us; 2us; 3us; 2us; 3us; 1us; 3us; 1us; 3us; 3us; 6us; 1us; 1us; 1us; 3us; 2us; 1us; 1us; 1us; 1us; 1us; 1us; 1us; 3us; 1us; 1us; 1us; 1us; 1us; 3us; 1us; 1us; 1us; 1us; 2us; 2us; 1us; 1us; 1us; 1us; 4us; 4us; 3us; 3us; 3us; 3us; 1us; 1us; 1us; 1us; 1us; 3us; 3us; |]
 let _fsyacc_productionToNonTerminalTable = [|0us; 1us; 2us; 3us; 3us; 4us; 4us; 5us; 5us; 5us; 5us; 5us; 5us; 5us; 6us; 6us; 7us; 7us; 7us; 7us; 8us; 9us; 9us; 9us; 9us; 10us; 10us; 10us; 11us; 11us; 11us; 11us; 11us; 12us; 12us; 12us; 12us; 12us; 12us; 13us; 13us; 14us; 14us; 15us; 15us; 15us; 15us; 15us; 15us; 15us; 16us; 16us; 17us; 17us; 17us; 17us; 17us; 17us; 17us; 17us; 18us; 19us; 20us; 20us; 21us; 21us; 22us; 23us; 24us; 25us; 26us; 26us; 27us; 28us; 29us; 29us; 30us; 30us; 31us; 32us; 32us; 32us; 32us; 33us; 33us; 34us; 34us; 34us; 35us; 35us; 35us; 35us; 35us; 35us; 36us; 36us; 37us; 37us; 38us; 38us; 39us; 39us; 40us; 40us; 40us; 41us; 41us; 41us; 42us; 42us; 42us; 42us; 43us; 43us; 43us; 43us; 44us; 45us; 45us; 46us; 46us; 46us; 46us; 46us; 46us; |]
 let _fsyacc_immediateActions = [|65535us; 49152us; 16385us; 65535us; 16386us; 16387us; 16388us; 16389us; 16390us; 16391us; 16392us; 16393us; 16394us; 16395us; 16396us; 16397us; 16398us; 16399us; 16400us; 16401us; 16402us; 16403us; 65535us; 65535us; 65535us; 65535us; 16404us; 65535us; 65535us; 65535us; 65535us; 65535us; 16405us; 65535us; 16406us; 65535us; 65535us; 65535us; 65535us; 65535us; 16407us; 65535us; 65535us; 16408us; 65535us; 65535us; 16409us; 65535us; 65535us; 16410us; 65535us; 65535us; 16411us; 65535us; 65535us; 65535us; 65535us; 16412us; 65535us; 65535us; 65535us; 65535us; 16413us; 65535us; 16414us; 65535us; 65535us; 16415us; 65535us; 65535us; 16416us; 65535us; 65535us; 65535us; 65535us; 65535us; 16417us; 65535us; 65535us; 65535us; 16418us; 16419us; 16420us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 16421us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 16422us; 65535us; 16424us; 65535us; 16425us; 16426us; 65535us; 65535us; 65535us; 16427us; 65535us; 65535us; 65535us; 16428us; 16429us; 65535us; 65535us; 65535us; 16432us; 65535us; 16433us; 65535us; 65535us; 65535us; 16434us; 16435us; 16436us; 16437us; 16438us; 16439us; 16440us; 16441us; 16442us; 16443us; 65535us; 16444us; 65535us; 65535us; 16445us; 65535us; 65535us; 65535us; 16446us; 65535us; 65535us; 16447us; 16448us; 65535us; 16449us; 65535us; 65535us; 16451us; 65535us; 65535us; 65535us; 65535us; 65535us; 16454us; 65535us; 16455us; 65535us; 16456us; 65535us; 16457us; 65535us; 65535us; 16458us; 16459us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 16462us; 16463us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 65535us; 16464us; 65535us; 65535us; 65535us; 65535us; 65535us; 16467us; 16468us; 65535us; 65535us; 65535us; 65535us; 16471us; 16472us; 16473us; 16474us; 16475us; 16476us; 16477us; 65535us; 65535us; 65535us; 16480us; 16481us; 16482us; 16483us; 16484us; 65535us; 16485us; 16486us; 16487us; 16488us; 16489us; 65535us; 16490us; 65535us; 16491us; 16492us; 65535us; 16494us; 16495us; 65535us; 16496us; 65535us; 65535us; 16497us; 16498us; 65535us; 16499us; 65535us; 16500us; 65535us; 16503us; 16504us; 16505us; 16506us; 65535us; 65535us; 16507us; 65535us; 16508us; |]
-let _fsyacc_reductions ()  =    [| 
+let _fsyacc_reductions ()  =    [|
 # 607 "parser.fs"
         (fun (parseState : Microsoft.FSharp.Text.Parsing.IParseState) ->
             let _1 = (let data = parseState.GetInput(1) in (Microsoft.FSharp.Core.Operators.unbox data : Program)) in
@@ -620,7 +620,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 126 "parser.y"
-                                      _1 
+                                      _1
                    )
 # 126 "parser.y"
                  : Program));
@@ -631,7 +631,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 128 "parser.y"
-                                                        _1 
+                                                        _1
                    )
 # 128 "parser.y"
                  : Program));
@@ -643,7 +643,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 130 "parser.y"
-                                                     _1 @ [_2] 
+                                                     _1 @ [_2]
                    )
 # 130 "parser.y"
                  : Declaration list));
@@ -654,7 +654,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 131 "parser.y"
-                                                     [_1] 
+                                                     [_1]
                    )
 # 131 "parser.y"
                  : Declaration list));
@@ -665,7 +665,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 133 "parser.y"
-                                                     Ast.VariableDecl _1 
+                                                     Ast.VariableDecl _1
                    )
 # 133 "parser.y"
                  : Declaration));
@@ -685,7 +685,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 136 "parser.y"
-                                            Ast.Void 
+                                            Ast.Void
                    )
 # 136 "parser.y"
                  : TypeSpec));
@@ -695,7 +695,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 137 "parser.y"
-                                       Ast.Int 
+                                       Ast.Int
                    )
 # 137 "parser.y"
                  : TypeSpec));
@@ -705,7 +705,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 138 "parser.y"
-                                       Ast.Float 
+                                       Ast.Float
                    )
 # 138 "parser.y"
                  : TypeSpec));
@@ -715,7 +715,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 139 "parser.y"
-                                       Ast.Char 
+                                       Ast.Char
                    )
 # 139 "parser.y"
                  : TypeSpec));
@@ -725,7 +725,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 140 "parser.y"
-                                       Ast.Byte 
+                                       Ast.Byte
                    )
 # 140 "parser.y"
                  : TypeSpec));
@@ -735,7 +735,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 141 "parser.y"
-                                       Ast.String 
+                                       Ast.String
                    )
 # 141 "parser.y"
                  : TypeSpec));
@@ -745,7 +745,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 142 "parser.y"
-                                       Ast.Text 
+                                       Ast.Text
                    )
 # 142 "parser.y"
                  : TypeSpec));
@@ -756,7 +756,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 145 "parser.y"
-                                                     _1 
+                                                     _1
                    )
 # 145 "parser.y"
                  : 'fixed_decl));
@@ -767,7 +767,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 146 "parser.y"
-                                              _1 
+                                              _1
                    )
 # 146 "parser.y"
                  : 'fixed_decl));
@@ -778,7 +778,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 148 "parser.y"
-                                                  _1 
+                                                  _1
                    )
 # 148 "parser.y"
                  : VariableDecl));
@@ -789,7 +789,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 149 "parser.y"
-                                        _1 
+                                        _1
                    )
 # 149 "parser.y"
                  : VariableDecl));
@@ -800,7 +800,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 150 "parser.y"
-                                        _1 
+                                        _1
                    )
 # 150 "parser.y"
                  : VariableDecl));
@@ -811,7 +811,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 151 "parser.y"
-                                            _1 
+                                            _1
                    )
 # 151 "parser.y"
                  : VariableDecl));
@@ -823,7 +823,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 154 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.STATIC, idref _1, None, Some(_3)) 
+                           Ast.ScalarDecl(ScalarFlags.STATIC, idref _1, None, Some(_3))
                    )
 # 154 "parser.y"
                  : 'fixed_scalar_decl));
@@ -836,7 +836,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 159 "parser.y"
-                           Ast.ArrayDecl(flag_static_fixed, idref _1, Some(_4), Some(_7), None) 
+                           Ast.ArrayDecl(flag_static_fixed, idref _1, Some(_4), Some(_7), None)
                    )
 # 159 "parser.y"
                  : 'fixed_array_decl));
@@ -861,7 +861,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 169 "parser.y"
-                           Ast.ArrayDecl(flag_static_fixed, idref _1, None, Some(_6), Some(_8)) 
+                           Ast.ArrayDecl(flag_static_fixed, idref _1, None, Some(_6), Some(_8))
                    )
 # 169 "parser.y"
                  : 'fixed_array_decl));
@@ -875,7 +875,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 173 "parser.y"
-                           Ast.ArrayDecl(flag_static_fixed, idref _1, Some(_4), Some(_7), Some(_9)) 
+                           Ast.ArrayDecl(flag_static_fixed, idref _1, Some(_4), Some(_7), Some(_9))
                    )
 # 173 "parser.y"
                  : 'fixed_array_decl));
@@ -887,7 +887,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 176 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some(_3), None) 
+                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some(_3), None)
                    )
 # 176 "parser.y"
                  : 'scalar_decl));
@@ -900,7 +900,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 180 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some(_3), Some(_5)) 
+                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some(_3), Some(_5))
                    )
 # 180 "parser.y"
                  : 'scalar_decl));
@@ -924,7 +924,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 189 "parser.y"
-                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some(_6), None) 
+                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some(_6), None)
                    )
 # 189 "parser.y"
                  : 'array_decl));
@@ -937,7 +937,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 193 "parser.y"
-                           Ast.ArrayDecl(ArrayFlags.FIXED, idref _1, Some(_4), Some(_7), None) 
+                           Ast.ArrayDecl(ArrayFlags.FIXED, idref _1, Some(_4), Some(_7), None)
                    )
 # 193 "parser.y"
                  : 'array_decl));
@@ -962,7 +962,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 201 "parser.y"
-                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some(_6), Some(_8)) 
+                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some(_6), Some(_8))
                    )
 # 201 "parser.y"
                  : 'array_decl));
@@ -976,7 +976,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 205 "parser.y"
-                           Ast.ArrayDecl(ArrayFlags.FIXED, idref _1, Some(_4), Some(_7), Some(_9)) 
+                           Ast.ArrayDecl(ArrayFlags.FIXED, idref _1, Some(_4), Some(_7), Some(_9))
                    )
 # 205 "parser.y"
                  : 'array_decl));
@@ -990,7 +990,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 209 "parser.y"
-                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, _4, _7, _8) 
+                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, _4, _7, _8)
                    )
 # 209 "parser.y"
                  : 'procedure_decl));
@@ -1003,7 +1003,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 212 "parser.y"
-                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, [], _6, _7) 
+                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, [], _6, _7)
                    )
 # 212 "parser.y"
                  : 'procedure_decl));
@@ -1016,7 +1016,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 215 "parser.y"
-                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, _4, Ast.Void, _6) 
+                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, _4, Ast.Void, _6)
                    )
 # 215 "parser.y"
                  : 'procedure_decl));
@@ -1028,7 +1028,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 218 "parser.y"
-                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, [], Ast.Void, _5) 
+                           Ast.ProcedureDecl(ProcFlags.PUBLIC, idref _1, [], Ast.Void, _5)
                    )
 # 218 "parser.y"
                  : 'procedure_decl));
@@ -1042,7 +1042,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 224 "parser.y"
-                           Ast.ProcedureDecl(ProcFlags.LOCAL, idref _2, _5, _8, _9) 
+                           Ast.ProcedureDecl(ProcFlags.LOCAL, idref _2, _5, _8, _9)
                    )
 # 224 "parser.y"
                  : 'procedure_decl));
@@ -1055,7 +1055,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 227 "parser.y"
-                           Ast.ProcedureDecl(ProcFlags.EXTERN, idref _3, _6, _9, [Ast.Declaration(Ast.DeclNop)]) 
+                           Ast.ProcedureDecl(ProcFlags.EXTERN, idref _3, _6, _9, [Ast.Declaration(Ast.DeclNop)])
                    )
 # 227 "parser.y"
                  : 'procedure_decl));
@@ -1066,7 +1066,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 229 "parser.y"
-                                                   _1 
+                                                   _1
                    )
 # 229 "parser.y"
                  : Parameters));
@@ -1076,7 +1076,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 231 "parser.y"
-                                     [] 
+                                     []
                    )
 # 231 "parser.y"
                  : Parameters));
@@ -1088,7 +1088,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 233 "parser.y"
-                                                                      _1 @ [_3] 
+                                                                      _1 @ [_3]
                    )
 # 233 "parser.y"
                  : Parameters));
@@ -1099,7 +1099,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 234 "parser.y"
-                                       [_1] 
+                                       [_1]
                    )
 # 234 "parser.y"
                  : Parameters));
@@ -1111,7 +1111,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 237 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some _3, None) 
+                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some _3, None)
                    )
 # 237 "parser.y"
                  : VariableDecl));
@@ -1123,7 +1123,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 240 "parser.y"
-                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some _6, None) 
+                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some _6, None)
                    )
 # 240 "parser.y"
                  : VariableDecl));
@@ -1135,7 +1135,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 243 "parser.y"
-                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some _5, None) 
+                           Ast.ArrayDecl(ArrayFlags.NONE, idref _1, None, Some _5, None)
                    )
 # 243 "parser.y"
                  : VariableDecl));
@@ -1146,7 +1146,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 245 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.T, None) 
+                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.T, None)
                    )
 # 245 "parser.y"
                  : VariableDecl));
@@ -1157,7 +1157,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 247 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.TSeq, None) 
+                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.TSeq, None)
                    )
 # 247 "parser.y"
                  : VariableDecl));
@@ -1168,7 +1168,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 249 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.Tu, None) 
+                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.Tu, None)
                    )
 # 249 "parser.y"
                  : VariableDecl));
@@ -1179,7 +1179,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 251 "parser.y"
-                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.TSequ, None) 
+                           Ast.ScalarDecl(ScalarFlags.NONE, idref _1, Some Ast.TSequ, None)
                    )
 # 251 "parser.y"
                  : VariableDecl));
@@ -1191,7 +1191,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 253 "parser.y"
-                                                  _1 @ [_2] 
+                                                  _1 @ [_2]
                    )
 # 253 "parser.y"
                  : Statement list));
@@ -1202,7 +1202,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 254 "parser.y"
-                                                  [_1] 
+                                                  [_1]
                    )
 # 254 "parser.y"
                  : Statement list));
@@ -1213,7 +1213,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 256 "parser.y"
-                                                Ast.Declaration _1 
+                                                Ast.Declaration _1
                    )
 # 256 "parser.y"
                  : Statement));
@@ -1224,7 +1224,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 257 "parser.y"
-                                                Ast.SExpression _1 
+                                                Ast.SExpression _1
                    )
 # 257 "parser.y"
                  : Statement));
@@ -1235,7 +1235,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 258 "parser.y"
-                                                Ast.CompoundStatement _1 
+                                                Ast.CompoundStatement _1
                    )
 # 258 "parser.y"
                  : Statement));
@@ -1246,7 +1246,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 259 "parser.y"
-                                                Ast.IfStatement _1 
+                                                Ast.IfStatement _1
                    )
 # 259 "parser.y"
                  : Statement));
@@ -1257,7 +1257,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 260 "parser.y"
-                                                Ast.WhileStatement _1 
+                                                Ast.WhileStatement _1
                    )
 # 260 "parser.y"
                  : Statement));
@@ -1268,7 +1268,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 261 "parser.y"
-                                                Ast.ReturnStatement _1 
+                                                Ast.ReturnStatement _1
                    )
 # 261 "parser.y"
                  : Statement));
@@ -1279,7 +1279,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 262 "parser.y"
-                                                Ast.BreakStatement 
+                                                Ast.BreakStatement
                    )
 # 262 "parser.y"
                  : Statement));
@@ -1290,7 +1290,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 263 "parser.y"
-                                                Ast.ContinueStatement 
+                                                Ast.ContinueStatement
                    )
 # 263 "parser.y"
                  : Statement));
@@ -1301,7 +1301,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 265 "parser.y"
-                                       Ast.Expression _1 
+                                       Ast.Expression _1
                    )
 # 265 "parser.y"
                  : SExpression));
@@ -1313,7 +1313,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 267 "parser.y"
-                                                      (_2, _3) 
+                                                      (_2, _3)
                    )
 # 267 "parser.y"
                  : WhileStatement));
@@ -1324,7 +1324,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 269 "parser.y"
-                                                                     (_2, None) 
+                                                                     (_2, None)
                    )
 # 269 "parser.y"
                  : IfStatement));
@@ -1336,7 +1336,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 270 "parser.y"
-                                                                     (_2, Some(_3)) 
+                                                                     (_2, Some(_3))
                    )
 # 270 "parser.y"
                  : IfStatement));
@@ -1347,7 +1347,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 272 "parser.y"
-                                                  [_1] 
+                                                  [_1]
                    )
 # 272 "parser.y"
                  : 'cond_clause_s));
@@ -1359,7 +1359,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 273 "parser.y"
-                                                             _1 @ [_3] 
+                                                             _1 @ [_3]
                    )
 # 273 "parser.y"
                  : 'cond_clause_s));
@@ -1371,7 +1371,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 275 "parser.y"
-                                                        Ast.ConditionalClause(_1, _2) 
+                                                        Ast.ConditionalClause(_1, _2)
                    )
 # 275 "parser.y"
                  : 'cond_clause));
@@ -1382,7 +1382,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 277 "parser.y"
-                                                    _1 
+                                                    _1
                    )
 # 277 "parser.y"
                  : 'cond_part));
@@ -1393,7 +1393,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 279 "parser.y"
-                                       _1 
+                                       _1
                    )
 # 279 "parser.y"
                  : 'condition));
@@ -1404,7 +1404,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 281 "parser.y"
-                                                   _2 
+                                                   _2
                    )
 # 281 "parser.y"
                  : 'else_opt));
@@ -1415,7 +1415,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 283 "parser.y"
-                                                                        _3 
+                                                                        _3
                    )
 # 283 "parser.y"
                  : CompoundStatement));
@@ -1425,7 +1425,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 284 "parser.y"
-                                                     [] 
+                                                     []
                    )
 # 284 "parser.y"
                  : CompoundStatement));
@@ -1435,7 +1435,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 286 "parser.y"
-                                                
+
                    )
 # 286 "parser.y"
                  : unit));
@@ -1445,7 +1445,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 288 "parser.y"
-                                                      
+
                    )
 # 288 "parser.y"
                  : unit));
@@ -1456,7 +1456,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 291 "parser.y"
-                                                             Some(_2) 
+                                                             Some(_2)
                    )
 # 291 "parser.y"
                  : Expression option));
@@ -1466,7 +1466,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 292 "parser.y"
-                                                 None 
+                                                 None
                    )
 # 292 "parser.y"
                  : Expression option));
@@ -1478,7 +1478,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 294 "parser.y"
-                                                       _1 @ [_3] 
+                                                       _1 @ [_3]
                    )
 # 294 "parser.y"
                  : 'expr_list));
@@ -1489,7 +1489,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 295 "parser.y"
-                                  [_1] 
+                                  [_1]
                    )
 # 295 "parser.y"
                  : 'expr_list));
@@ -1500,7 +1500,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 297 "parser.y"
-                                                          _2 
+                                                          _2
                    )
 # 297 "parser.y"
                  : 'aggregate));
@@ -1511,7 +1511,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 299 "parser.y"
-                                      _1 
+                                      _1
                    )
 # 299 "parser.y"
                  : Expression));
@@ -1524,7 +1524,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 300 "parser.y"
-                                                   Ast.BinaryExpression(_1, _2, _3) 
+                                                   Ast.BinaryExpression(_1, _2, _3)
                    )
 # 300 "parser.y"
                  : Expression));
@@ -1536,7 +1536,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 302 "parser.y"
-                           Ast.ScalarAssignExpression(idref _1, _3) 
+                           Ast.ScalarAssignExpression(idref _1, _3)
                    )
 # 302 "parser.y"
                  : Expression));
@@ -1549,7 +1549,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 305 "parser.y"
-                           Ast.ArrayAssignExpression(idref _1, _3, _6) 
+                           Ast.ArrayAssignExpression(idref _1, _3, _6)
                    )
 # 305 "parser.y"
                  : Expression));
@@ -1559,7 +1559,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 308 "parser.y"
-                                       Ast.CondAnd 
+                                       Ast.CondAnd
                    )
 # 308 "parser.y"
                  : 'logical));
@@ -1569,7 +1569,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 309 "parser.y"
-                                       Ast.CondOr 
+                                       Ast.CondOr
                    )
 # 309 "parser.y"
                  : 'logical));
@@ -1580,7 +1580,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 312 "parser.y"
-                                          _1 
+                                          _1
                    )
 # 312 "parser.y"
                  : 'relation));
@@ -1593,7 +1593,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 318 "parser.y"
-                                                          Ast.BinaryExpression(_1, _2, _3) 
+                                                          Ast.BinaryExpression(_1, _2, _3)
                    )
 # 318 "parser.y"
                  : 'relation));
@@ -1604,10 +1604,10 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 319 "parser.y"
-                                           
+
                              yyerror "Multiple relation expressions"
                              _2
-                         
+
                    )
 # 319 "parser.y"
                  : 'relation));
@@ -1617,7 +1617,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 324 "parser.y"
-                                                 Ast.Eq 
+                                                 Ast.Eq
                    )
 # 324 "parser.y"
                  : 'relational));
@@ -1627,7 +1627,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 325 "parser.y"
-                                                 Ast.LtEq 
+                                                 Ast.LtEq
                    )
 # 325 "parser.y"
                  : 'relational));
@@ -1637,7 +1637,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 326 "parser.y"
-                                                 Ast.NotEq 
+                                                 Ast.NotEq
                    )
 # 326 "parser.y"
                  : 'relational));
@@ -1647,7 +1647,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 327 "parser.y"
-                                                 Ast.Lt 
+                                                 Ast.Lt
                    )
 # 327 "parser.y"
                  : 'relational));
@@ -1657,7 +1657,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 328 "parser.y"
-                                                 Ast.GtEq 
+                                                 Ast.GtEq
                    )
 # 328 "parser.y"
                  : 'relational));
@@ -1667,7 +1667,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 329 "parser.y"
-                                                 Ast.Gt 
+                                                 Ast.Gt
                    )
 # 329 "parser.y"
                  : 'relational));
@@ -1678,7 +1678,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 331 "parser.y"
-                                      _1 
+                                      _1
                    )
 # 331 "parser.y"
                  : 'equation));
@@ -1691,7 +1691,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 332 "parser.y"
-                                                       Ast.BinaryExpression(_1, _2, _3) 
+                                                       Ast.BinaryExpression(_1, _2, _3)
                    )
 # 332 "parser.y"
                  : 'equation));
@@ -1701,7 +1701,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 334 "parser.y"
-                                   Ast.Identity 
+                                   Ast.Identity
                    )
 # 334 "parser.y"
                  : 'unary));
@@ -1711,7 +1711,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 335 "parser.y"
-                                   Ast.Negate 
+                                   Ast.Negate
                    )
 # 335 "parser.y"
                  : 'unary));
@@ -1721,7 +1721,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 337 "parser.y"
-                                         Ast.Add 
+                                         Ast.Add
                    )
 # 337 "parser.y"
                  : 'combinatory));
@@ -1731,7 +1731,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 338 "parser.y"
-                                         Ast.Sub 
+                                         Ast.Sub
                    )
 # 338 "parser.y"
                  : 'combinatory));
@@ -1742,7 +1742,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 340 "parser.y"
-                                    _1 
+                                    _1
                    )
 # 340 "parser.y"
                  : 'term));
@@ -1755,7 +1755,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 341 "parser.y"
-                                                    Ast.BinaryExpression(_1, _2, _3) 
+                                                    Ast.BinaryExpression(_1, _2, _3)
                    )
 # 341 "parser.y"
                  : 'term));
@@ -1765,7 +1765,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 343 "parser.y"
-                                            Ast.Mul 
+                                            Ast.Mul
                    )
 # 343 "parser.y"
                  : 'sequential));
@@ -1775,7 +1775,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 344 "parser.y"
-                                            Ast.Div 
+                                            Ast.Div
                    )
 # 344 "parser.y"
                  : 'sequential));
@@ -1785,7 +1785,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 345 "parser.y"
-                                            Ast.Mod 
+                                            Ast.Mod
                    )
 # 345 "parser.y"
                  : 'sequential));
@@ -1796,7 +1796,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 347 "parser.y"
-                                        _1 
+                                        _1
                    )
 # 347 "parser.y"
                  : 'factor));
@@ -1819,7 +1819,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 349 "parser.y"
-                                           Ast.UnaryExpression(_1, _2) 
+                                           Ast.UnaryExpression(_1, _2)
                    )
 # 349 "parser.y"
                  : 'factor));
@@ -1830,7 +1830,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 351 "parser.y"
-                                        Ast.LiteralExpression _1 
+                                        Ast.LiteralExpression _1
                    )
 # 351 "parser.y"
                  : 'primary));
@@ -1841,7 +1841,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 352 "parser.y"
-                                        Ast.IdentifierExpression(idref _1) 
+                                        Ast.IdentifierExpression(idref _1)
                    )
 # 352 "parser.y"
                  : 'primary));
@@ -1852,7 +1852,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 353 "parser.y"
-                                        _1 
+                                        _1
                    )
 # 353 "parser.y"
                  : 'primary));
@@ -1863,7 +1863,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 354 "parser.y"
-                                           _1 
+                                           _1
                    )
 # 354 "parser.y"
                  : 'primary));
@@ -1875,7 +1875,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 357 "parser.y"
-                           Ast.ArrayIdentifierExpression(idref _1, _3) 
+                           Ast.ArrayIdentifierExpression(idref _1, _3)
                    )
 # 357 "parser.y"
                  : 'qualified));
@@ -1920,7 +1920,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 368 "parser.y"
-                                                         _2 
+                                                         _2
                    )
 # 368 "parser.y"
                  : 'paren_primary));
@@ -1932,7 +1932,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 370 "parser.y"
-                                                       _1 @ [_3] 
+                                                       _1 @ [_3]
                    )
 # 370 "parser.y"
                  : Arguments));
@@ -1943,7 +1943,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 371 "parser.y"
-                                                       [_1] 
+                                                       [_1]
                    )
 # 371 "parser.y"
                  : Arguments));
@@ -1954,7 +1954,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 373 "parser.y"
-                                              Ast.IntLiteral(int _1) 
+                                              Ast.IntLiteral(int _1)
                    )
 # 373 "parser.y"
                  : Literal));
@@ -1965,7 +1965,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 374 "parser.y"
-                                              Ast.FloatLiteral(float32 _1) 
+                                              Ast.FloatLiteral(float32 _1)
                    )
 # 374 "parser.y"
                  : Literal));
@@ -1976,7 +1976,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 375 "parser.y"
-                                              Ast.ByteLiteral(byte _1) 
+                                              Ast.ByteLiteral(byte _1)
                    )
 # 375 "parser.y"
                  : Literal));
@@ -1987,7 +1987,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 376 "parser.y"
-                                              Ast.StringLiteral _1 
+                                              Ast.StringLiteral _1
                    )
 # 376 "parser.y"
                  : Literal));
@@ -1998,7 +1998,7 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 377 "parser.y"
-                                                         Ast.CharLiteral(char _3) 
+                                                         Ast.CharLiteral(char _3)
                    )
 # 377 "parser.y"
                  : Literal));
@@ -2009,17 +2009,17 @@ let _fsyacc_reductions ()  =    [|
                 (
                    (
 # 378 "parser.y"
-                                                         Ast.TextLiteral _3 
+                                                         Ast.TextLiteral _3
                    )
 # 378 "parser.y"
                  : Literal));
 |]
 # 2017 "parser.fs"
-let tables () : Microsoft.FSharp.Text.Parsing.Tables<_> = 
+let tables () : Microsoft.FSharp.Text.Parsing.Tables<_> =
   { reductions= _fsyacc_reductions ();
     endOfInputTag = _fsyacc_endOfInputTag;
     tagOfToken = tagOfToken;
-    dataOfToken = _fsyacc_dataOfToken; 
+    dataOfToken = _fsyacc_dataOfToken;
     actionTableElements = _fsyacc_actionTableElements;
     actionTableRowOffsets = _fsyacc_actionTableRowOffsets;
     stateToProdIdxsTableElements = _fsyacc_stateToProdIdxsTableElements;
@@ -2029,8 +2029,8 @@ let tables () : Microsoft.FSharp.Text.Parsing.Tables<_> =
     gotos = _fsyacc_gotos;
     sparseGotoTableRowOffsets = _fsyacc_sparseGotoTableRowOffsets;
     tagOfErrorTerminal = _fsyacc_tagOfErrorTerminal;
-    parseError = (fun (ctxt:Microsoft.FSharp.Text.Parsing.ParseErrorContext<_>) -> 
-                              match parse_error_rich with 
+    parseError = (fun (ctxt:Microsoft.FSharp.Text.Parsing.ParseErrorContext<_>) ->
+                              match parse_error_rich with
                               | Some f -> f ctxt
                               | None -> parse_error ctxt.Message);
     numTerminals = 64;

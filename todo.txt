@@ -1,7 +1,20 @@
 # Compiler
 
++ [OK] FIX: recursion (compiler)
++ FIX: list.count works for Aggregate but not for arrays
++ FIX: Aggregate cause memory access errors
++ [OK] FIX: return expression "Expected memory addressable variable..."
++ [OK] Handle system calls, deallocate parameters
++ [OK] Handle procedure without explicit return statement
++ Temps need types
++ [OK] Add syntax to support external calls with generic or
+  unchecked parameters.
++ Add generic retrun value for external calls
++ Return array types
++ Extern generics array vs element
+
 Fundamental
-+ [Parser OK] Variables, constants, operators, types
++ [OK] Variables, constants, operators, types
 + [Parser OK] Functions, if, while
 + [Parser OK] Else if
 + [Parser OK] Nested functions?
@@ -33,12 +46,16 @@ Extra
 IR Compiler
 ===========
 
++ Optimize unary minus constant
++ Constant folding
++ Initialize declarations to zero
 + Maybe we need to differentiate loading a value from the stack vs
   loading the value pointed by a pointer on the stack
 
 Semantic Analysis
 =================
 
++ Aggregate size expression not in expression table
 + FIX: array[1] = int_literal gives a type_error because it expects
   an [] int instead.
     -- This should not throw an error
@@ -60,6 +77,7 @@ Semantic Analysis
 Parser
 ======
 
++ FIX: n-1
 + Remove text type, use [] of byte with #pack
 + FIX: Fixed scalars need type
 + Import/Export statements
@@ -100,3 +118,22 @@ Assembler
 + [OK] Floating point support
 + [OK] Declare memory space in .dat
 + [OK] BUG: signed byte
+
+    [0]                 magic
+    [1]                 version
+    [2]                 stack_heap_size (in words)
+    [4]                 text_ptr
+    [8]                 dat_ptr
+    [12]                mut_ptr
+    [14]                import_table_ptr
+    [16]                export_table_ptr
+    [import_table_ptr]  import_table
+    [export_table_ptr]  export_table
+    ---
+    [text_ptr]          .text
+    [dat_ptr]           .dat
+    [mut_ptr]           .mut
+    [cpu.heap]          heap
+    [cpu.hp]            stack
+    [len(memory)]
+    [MAX_MEMORY]

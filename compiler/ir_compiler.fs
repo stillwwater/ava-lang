@@ -62,7 +62,7 @@ and Instruction =
     | PushParam of Operand
     | FreeParams of int
     | Call of Operand * Label
-    | CallExtern of string
+    | CallExtern of Operand * string
     | Ret of Operand
     | Malloc of Operand * Operand
     | Free of Operand
@@ -322,17 +322,30 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 emit(ArrayStore(a, i, b))
                 a
             | ProcedureCallExpression(id_ref, args) ->
-                let mutable argc = 0
+                match id_ref.Identifier with
+                | "free" ->
+                    emit(Free(compile_expression args.[0]))
+                    Nop
+                | "malloc" ->
+                    let a = alloc_temp()
+                    emit(Malloc(a, compile_expression args.[0]))
+                    a
+                | _ ->
+                    // Runtime procedure call
+                    let argc = args.Length
 
-                args |> List.iteri (fun i x ->
-                    argc <- i + 1
-                    emit(PushParam(compile_expression x)))
+                    for i = args.Length - 1 downto 0 do
+                        emit(PushParam(compile_expression args.[i]))
 
-                // @Todo: return array type
-                let a = alloc_temp()
-                emit(Call(a, id_ref.Identifier))
-                emit(FreeParams(argc))
-                a
+                    // @Todo: return array type
+                    let a = alloc_temp()
+
+                    if semantics.ProcedureTable.[id_ref.Identifier].IsExtern then
+                        emit(CallExtern(a, id_ref.Identifier))
+                    else emit(Call(a, id_ref.Identifier))
+
+                    emit(FreeParams(argc))
+                    a
             | LiteralExpression(l) ->
                 match l with
                 | IntLiteral(i) ->
@@ -563,7 +576,7 @@ let dump (ir: IR) =
         | BitNot(dst, op1) -> sprintf "\t%s := ~%s" (s dst) (s op1)
         | Copy(dst, op) -> sprintf "\t%s := %s" (s dst) (s op)
         | Call(dst, op) -> sprintf "\t%s := call %s" (s dst) op
-        | CallExtern(dst) -> sprintf "\t[NOT SUPPORTED] %s" dst // @Todo
+        | CallExtern(dst, s) -> sprintf "\t[NOT SUPPORTED]" // @Todo
         | Malloc(dst, op) -> sprintf "\t%s := malloc %s" (s dst) (s op)
         | Free(op) -> sprintf "\tfree %s" (s op)
         | LoadRef(dst, op) -> sprintf "\t%s := %s^" (s dst) (s op)

@@ -1,10 +1,3 @@
-abs :: (a: int) -> int do
-    if a < 0 then
-        return -a
-    end
-    return a
-end
-
 fib :: (n: int) -> int do
     z: int
     a := 0
@@ -21,17 +14,26 @@ fib :: (n: int) -> int do
     return a
 end
 
-factorial :: (n: int) -> int do
+fact :: (n: int) -> int do
     if n == 0 then
         return 1
-    else
-        return factorial(n - 1)
     end
+    return n * fact(n - 1)
 end
 
+hanoi :: (n: int, fromrod: int, torod: int, auxrod: int) do
+    if (n == 1) then
+        return
+    end
 
-main :: (args: [] str) do
-    abs(-12)
-    fib(20)
-    factorial(6)
+    hanoi(n - 1, fromrod, auxrod, torod);
+    hanoi(n - 1, auxrod, torod, fromrod);
 end
+
+main :: () -> int do
+    n := 6
+    print("fact %d = %d%n", n, fact(n))
+    return 0
+end
+
+#extern print :: (fmt: str, e: $$ #unchecked) -> void

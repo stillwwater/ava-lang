@@ -89,6 +89,7 @@ type ProcedureTableEntry =
     {
         ReturnType     : TypeSpec;
         ParameterTypes : VariableType list;
+        IsExtern       : bool;
     }
 
 type ProcedureTable(program: Program) as self =
@@ -101,12 +102,14 @@ type ProcedureTable(program: Program) as self =
             | ScalarDecl(_)
             | ArrayDecl(_) ->
                 ()
-            | ProcedureDecl(_, id_ref, p, t, _) ->
+            | ProcedureDecl(flags, id_ref, p, t, _) ->
                 let id = id_ref.Identifier
                 if self.ContainsKey id then
                     // @Todo: Error
                     printfn "Procedure %s already defined" id
-                self.Add(id, { ReturnType = t; ParameterTypes = List.map typeof_decl p; })
+
+                let is_extern = flags.HasFlag(ProcFlags.EXTERN)
+                self.Add(id, { ReturnType = t; ParameterTypes = List.map typeof_decl p; IsExtern = is_extern})
         | DeclNop -> ()
 
     do
