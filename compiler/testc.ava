@@ -31,9 +31,33 @@ hanoi :: (n: int, fromrod: int, torod: int, auxrod: int) do
 end
 
 main :: () -> int do
-    n := 6
-    print("fact %d = %d%n", n, fact(n))
+    array : [] of int
+
+    array = append(array, 12)
+    array = append(array, 13)
+    array[1] = 14
+
+    printf("%ncount: %d, cap: %d%n", array[-1], array[-2])
+    printf("first: %d, last: %d%n", array[0], array[array[-1]-1])
+
+    printf("[")
+    i := 0
+
+    while i < array[-1] do
+        printf("%d, ", array[i])
+        i = i + 1
+    end
+    printf("]%n")
+    printf("free?: ")
+
+    if array[-3] == 2 then
+        printf("NO%n%n")
+    else
+        printf("YES%n%n")
+    end
     return 0
 end
 
-#extern print :: (fmt: str, e: $$ #unchecked) -> void
+#extern printf :: (fmt: str, e: $$ #unchecked) -> void
+#extern append :: (a: []$, e: $) -> int
+#extern read_int :: (fmt: int) -> int

@@ -133,6 +133,7 @@ type nonTerminalId =
     | NONTERM_decl_list
     | NONTERM_decl
     | NONTERM_type_spec
+    | NONTERM_array_type_spec
     | NONTERM_fixed_decl
     | NONTERM_variable_decl
     | NONTERM_fixed_scalar_decl

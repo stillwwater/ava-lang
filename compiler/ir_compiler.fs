@@ -299,7 +299,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             result
 
         and compile_expression expr =
-            let expr_type = semantics.ExpressionTable.[expr]
+            //let expr_type = semantics.ExpressionTable.[expr]
             let e = const_fold expr
 
             match e with
@@ -401,8 +401,13 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                         Nop
                     | ArrayDecl(_, id_ref, None, _, None) ->
                         let a = alloc_ptr id_ref
-                        let size = Const(4) // @Todo: cell size
+                        let size = Const(2)
                         emit(Malloc(a, size))
+                        // The heap assigns a capacity and length to the array
+                        // as the same value, since this is an empty array, the
+                        // length must be set to zero, while the capacity will
+                        // be the minimum array capacity.
+                        emit(ArrayStore(a, Const -1, Const 0))
                         alloc_local()
                         Nop
                     | ArrayDecl(_, id_ref, _, _, Some tup) ->

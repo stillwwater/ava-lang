@@ -141,6 +141,9 @@ type_spec: KW_VOID   { Ast.Void }
     | KW_STRING { Ast.String }
     | KW_TEXT   { Ast.Text }
 
+array_type_spec: LBRACKET RBRACKET KW_OF type_spec { $4 }
+    | LBRACKET RBRACKET type_spec { $3 }
+
 // const :: 5
 fixed_decl: fixed_scalar_decl { $1 }
     | fixed_array_decl { $1 }
@@ -236,11 +239,8 @@ parameter_list: parameter_list COMMA parameter { $1 @ [$3] }
 parameter: IDENT COLON type_spec
     { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some $3, None) }
     // array : [] of int
-    | IDENT COLON LBRACKET RBRACKET KW_OF type_spec
-    { Ast.ArrayDecl(ArrayFlags.NONE, idref $1, None, Some $6, None) }
-    // array : []int
-    | IDENT COLON LBRACKET RBRACKET type_spec
-    { Ast.ArrayDecl(ArrayFlags.NONE, idref $1, None, Some $5, None) }
+    | IDENT COLON array_type_spec
+    { Ast.ArrayDecl(ArrayFlags.NONE, idref $1, None, Some $3, None) }
     | IDENT COLON DOLLAR
     { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some Ast.T, None) }
     | IDENT COLON DOUBLE_DOLLAR
@@ -249,6 +249,8 @@ parameter: IDENT COLON type_spec
     { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some Ast.Tu, None) }
     | IDENT COLON DOUBLE_DOLLAR HASH DR_UNCHECKED
     { Ast.ScalarDecl(ScalarFlags.NONE, idref $1, Some Ast.TSequ, None) }
+    | IDENT COLON LBRACKET RBRACKET DOLLAR
+    { Ast.ArrayDecl(ArrayFlags.NONE, idref $1, None, Some Ast.T, None) }
 
 stmt_list: stmt_list stmt  { $1 @ [$2] }
     | stmt                 { [$1] }

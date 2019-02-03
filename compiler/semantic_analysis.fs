@@ -67,12 +67,12 @@ let scalar_type t = { Type = t; IsArray = false }
 let typeof_decl =
     function
     // @Todo: None types should be an error at this point
-    | Ast.ScalarDecl(_, _, Some(t), _) ->  { Type = t; IsArray = false }
-    | Ast.ScalarDecl(_, _, None, _) -> { Type = Void; IsArray = false }
+    | Ast.ScalarDecl(_, _, Some(t), _)   -> { Type = t; IsArray = false }
+    | Ast.ScalarDecl(_, _, None, _)      -> { Type = Void; IsArray = false }
     | Ast.ArrayDecl(_, _, _, Some(t), _) -> { Type = t; IsArray = true }
-    | Ast.ArrayDecl(_, _, _, None, _) -> { Type = Void; IsArray = true }
+    | Ast.ArrayDecl(_, _, _, None, _)    -> { Type = Void; IsArray = true }
     // @Todo: handle procedure declarations properly
-    | Ast.ProcedureDecl(_, _, _, t, _) -> { Type = t; IsArray = false }
+    | Ast.ProcedureDecl(_, _, _, t, _)   -> { Type = t; IsArray = false }
 
 let eval_static_array_size expr =
     match expr with
@@ -100,8 +100,7 @@ type ProcedureTable(program: Program) as self =
         | VariableDecl(d) ->
             match d with
             | ScalarDecl(_)
-            | ArrayDecl(_) ->
-                ()
+            | ArrayDecl(_) -> ()
             | ProcedureDecl(flags, id_ref, p, t, _) ->
                 let id = id_ref.Identifier
                 if self.ContainsKey id then
@@ -109,7 +108,7 @@ type ProcedureTable(program: Program) as self =
                     printfn "Procedure %s already defined" id
 
                 let is_extern = flags.HasFlag(ProcFlags.EXTERN)
-                self.Add(id, { ReturnType = t; ParameterTypes = List.map typeof_decl p; IsExtern = is_extern})
+                self.Add(id, { ReturnType = t; ParameterTypes = List.map typeof_decl p; IsExtern = is_extern })
         | DeclNop -> ()
 
     do
@@ -419,10 +418,9 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                 | ScalarDecl(flags, _, _, _) ->
                     if flags.HasFlag(ScalarFlags.CONSTANT) then
                         printfn "Error: Cannot reassign constant '%s'." id.Identifier
-                | ArrayDecl(_, id, _, _, _) ->
-                    printfn "Error: Cannot reassign array '%s'" id.Identifier // @Temporary
                 | ProcedureDecl(_, id, _, _, _) ->
                     printfn "Error: Cannot reassign procedure '%s'" id.Identifier
+                | ArrayDecl(_) -> ()
 
                 typeof_id
             | ArrayAssignExpression(id, e1, e2) ->
@@ -437,7 +435,7 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
 
                 // @Todo: Multidementional arrays
 
-                if typeof_e2 <> typeof_id then
+                if typeof_e2 <> (scalar_type typeof_id.Type) then
                     // @Todo: error
                     printfn "TypeError: expected %s, got %s" (typeof_id.ToString()) (typeof_e2.ToString())
 
@@ -526,6 +524,10 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                             match generic_type with
                             | Some(t) -> is_valid t
                             | None -> generic_type <- Some a
+                        | { Type = T; IsArray = true } ->
+                            match generic_type with
+                            | Some(t) -> is_valid t
+                            | None -> generic_type <- Some (scalar_type a.Type)
                         | { Type = Tu; IsArray = false }
                         | { Type = TSequ; IsArray = false } -> ()
                         | _ -> is_valid b
