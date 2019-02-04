@@ -1,5 +1,11 @@
 # Compiler
 
++ [!] Return array types
+      This will probably requary modifying the ast and making
+      [] of type a separate type_spec.
+
++ FIX: expression table on identifier type
++ Pass by reference
 + [OK] FIX: recursion (compiler)
 + FIX: list.count works for Aggregate but not for arrays
 + FIX: Aggregate cause memory access errors
@@ -10,7 +16,6 @@
 + [OK] Add syntax to support external calls with generic or
   unchecked parameters.
 + Add generic retrun value for external calls
-+ Return array types
 + Extern generics array vs element
 
 Fundamental

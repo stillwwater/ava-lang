@@ -2,525 +2,572 @@ namespace Ava
 {
     struct LRX
     {
-        internal const int SIZE = 3;
+        internal const int SIZE = 1;
         internal byte dst;
         internal byte src;
 
         LRX(Script vm) {
-            byte op0 = vm.memory[vm.cpu.ip + 1];
-            byte op1 = vm.memory[vm.cpu.ip + 2];
+            // @Performance: This address is already read by the vm
+            // perhaps it would be more efficient to pass the read
+            // value to the instruction.
+            int data = vm.memory[vm.cpu.eip];
+            byte op0 = (byte)((data & 0x00_FF_00_00) >> 16);
+            byte op1 = (byte)((data & 0xFF_00_00_00) >> 24);
 
             if (op0 > Registers.NUM_REGISTERS || op1 > Registers.NUM_REGISTERS) {
-                vm.cpu.status.error = Cpu.Error.BAD_REGISTER;
+                vm.cpu.status = Cpu.Status.BAD_REGISTER;
                 dst = 0;
                 src = 0;
                 return;
             }
 
-            vm.cpu.ip += LRX.SIZE;
+            vm.cpu.eip += LRX.SIZE;
             dst = op0;
             src = op1;
         }
 
-        internal static bool SLL(Script vm) {
+        internal static Cpu.Status SLL(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] = vm.cpu.registers[lrx.dst] << (int)vm.cpu.registers[lrx.src];
-            return false;
+            int dst = vm.cpu.registers[lrx.dst];
+            int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] = dst << src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool SRL(Script vm) {
+        internal static Cpu.Status SRL(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] = (uint)((int)vm.cpu.registers[lrx.dst] >> (int)vm.cpu.registers[lrx.src]);
-            return false;
+            int dst = vm.cpu.registers[lrx.dst];
+            int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] = dst >> src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool SRLU(Script vm) {
-            var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] = vm.cpu.registers[lrx.dst] >> (int)vm.cpu.registers[lrx.src];
-            return false;
+        internal static Cpu.Status SRLU(Script vm) {
+            var lrx  = new LRX(vm);
+            uint dst = (uint)vm.cpu.registers[lrx.dst];
+            int src  = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] = (int)(dst >> src);
+            return Cpu.Status.OK;
         }
 
-        internal static bool MUL(Script vm) {
+        internal static Cpu.Status MUL(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] *= vm.cpu.registers[lrx.src];
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] *= src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool DIV(Script vm) {
+        internal static Cpu.Status DIV(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] = (uint)((int)vm.cpu.registers[lrx.dst] / (int)vm.cpu.registers[lrx.src]);
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] /= src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool DIVU(Script vm) {
+        internal static Cpu.Status DIVU(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] /= vm.cpu.registers[lrx.src];
-            return false;
+			uint dst = (uint)vm.cpu.registers[lrx.dst];
+			uint src = (uint)vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] = (int)(dst / src);
+            return Cpu.Status.OK;
         }
 
-        internal static bool MOD(Script vm) {
+        internal static Cpu.Status MOD(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] = (uint)((int)vm.cpu.registers[lrx.dst] % (int)vm.cpu.registers[lrx.src]);
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] %= src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool MODU(Script vm) {
+        internal static Cpu.Status MODU(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] %= vm.cpu.registers[lrx.src];
-            return false;
+			uint dst = (uint)vm.cpu.registers[lrx.dst];
+			uint src = (uint)vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] = (int)(dst % src);
+            return Cpu.Status.OK;
         }
 
-        internal static bool ADD(Script vm) {
+        internal static Cpu.Status ADD(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] += vm.cpu.registers[lrx.src];
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] += src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool SUB(Script vm) {
+        internal static Cpu.Status SUB(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] -= vm.cpu.registers[lrx.src];
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] -= src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool MOV(Script vm) {
+        internal static Cpu.Status MOV(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] = vm.cpu.registers[lrx.src];
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] = src;
+
+            return Cpu.Status.OK;
         }
 
-        internal static bool CMP(Script vm) {
+        internal static Cpu.Status AND(Script vm) {
             var lrx = new LRX(vm);
-            int a = (int)vm.cpu.registers[lrx.dst];
-            int b = (int)vm.cpu.registers[lrx.src];
-
-            vm.cpu.status.CMP_BELOW = a < b;
-            vm.cpu.status.CMP_EQUAL = a == b;
-            vm.cpu.status.CMP_ABOVE = a > b;
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] &= src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool CMPU(Script vm) {
+        internal static Cpu.Status OR(Script vm) {
             var lrx = new LRX(vm);
-            uint a = vm.cpu.registers[lrx.dst];
-            uint b = vm.cpu.registers[lrx.src];
-
-            vm.cpu.status.CMP_BELOW = a < b;
-            vm.cpu.status.CMP_EQUAL = a == b;
-            vm.cpu.status.CMP_ABOVE = a > b;
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] |= src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool AND(Script vm) {
+        internal static Cpu.Status XOR(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] &= vm.cpu.registers[lrx.src];
-            return false;
+			int src = vm.cpu.registers[lrx.src];
+            vm.cpu.registers[lrx.dst] ^= src;
+            return Cpu.Status.OK;
         }
 
-        internal static bool OR(Script vm) {
+        ///
+        /// Signed compare instructions
+        ///
+
+        internal static Cpu.Status CEQ(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] |= vm.cpu.registers[lrx.src];
-            return false;
+			int dst = vm.cpu.registers[lrx.dst];
+			int src = vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst == src ? 1 : 0;
+            return Cpu.Status.OK;
         }
 
-        internal static bool XOR(Script vm) {
+		internal static Cpu.Status CNE(Script vm) {
+			var lrx = new LRX(vm);
+			int dst = vm.cpu.registers[lrx.dst];
+			int src = vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst != src ? 1 : 0;
+            return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CLT(Script vm) {
+			var lrx = new LRX(vm);
+			int dst = vm.cpu.registers[lrx.dst];
+			int src = vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst < src ? 1 : 0;
+            return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CLE(Script vm) {
+			var lrx = new LRX(vm);
+			int dst = vm.cpu.registers[lrx.dst];
+			int src = vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst <= src ? 1 : 0;
+            return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CGT(Script vm) {
+			var lrx = new LRX(vm);
+			int dst = vm.cpu.registers[lrx.dst];
+			int src = vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst > src ? 1 : 0;
+            return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CGE(Script vm) {
+			var lrx = new LRX(vm);
+			int dst = vm.cpu.registers[lrx.dst];
+			int src = vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst >= src ? 1 : 0;
+            return Cpu.Status.OK;
+		}
+
+		///
+		/// Unsigned compare instructions
+		///
+
+		internal static Cpu.Status CLTU(Script vm) {
+			var lrx = new LRX(vm);
+			uint dst = (uint)vm.cpu.registers[lrx.dst];
+			uint src = (uint)vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst < src ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CLEU(Script vm) {
+			var lrx = new LRX(vm);
+			uint dst = (uint)vm.cpu.registers[lrx.dst];
+			uint src = (uint)vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst <= src ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CGTU(Script vm) {
+			var lrx = new LRX(vm);
+			uint dst = (uint)vm.cpu.registers[lrx.dst];
+			uint src = (uint)vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst > src ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CGEU(Script vm) {
+			var lrx = new LRX(vm);
+			uint dst = (uint)vm.cpu.registers[lrx.dst];
+			uint src = (uint)vm.cpu.registers[lrx.src];
+			vm.cpu.registers[Registers.EAX] = dst >= src ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+		///
+		/// Floating point compare
+        /// [0x18..0x1B]
+		///
+
+		internal static Cpu.Status CLTF(Script vm) {
+			var lrx = new LRX(vm);
+			float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+			float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+			vm.cpu.registers[Registers.EAX] = f0 < f1 ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CLEF(Script vm) {
+			var lrx = new LRX(vm);
+			float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+			float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+			vm.cpu.registers[Registers.EAX] = f0 <= f1 ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CGTF(Script vm) {
+			var lrx = new LRX(vm);
+			float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+			float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+			vm.cpu.registers[Registers.EAX] = f0 > f1 ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+		internal static Cpu.Status CGEF(Script vm) {
+			var lrx = new LRX(vm);
+			float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+			float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+			vm.cpu.registers[Registers.EAX] = f0 >= f1 ? 1 : 0;
+			return Cpu.Status.OK;
+		}
+
+        ///
+        /// Floating point arithmetic
+        /// [0x1C..0x1F]
+        ///
+
+        internal static Cpu.Status MULF(Script vm) {
             var lrx = new LRX(vm);
-            vm.cpu.registers[lrx.dst] ^= vm.cpu.registers[lrx.src];
-            return false;
+            float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+            float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+            vm.cpu.registers[lrx.dst] = Float32.ToInt(f0 * f1);
+            return Cpu.Status.OK;
         }
 
-        // Floating point
-
-        internal static bool MULF(Script vm) {
+        internal static Cpu.Status DIVF(Script vm) {
             var lrx = new LRX(vm);
-            float f0 = vm.IntToFloat(vm.cpu.registers[lrx.dst]);
-            float f1 = vm.IntToFloat(vm.cpu.registers[lrx.src]);
-
-            vm.cpu.registers[lrx.dst] = vm.FloatToInt(f0 * f1);
-            return false;
+            float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+            float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+            vm.cpu.registers[lrx.dst] = Float32.ToInt(f0 / f1);
+            return Cpu.Status.OK;
         }
 
-        internal static bool DIVF(Script vm) {
+        internal static Cpu.Status ADDF(Script vm) {
             var lrx = new LRX(vm);
-            float f0 = vm.IntToFloat(vm.cpu.registers[lrx.dst]);
-            float f1 = vm.IntToFloat(vm.cpu.registers[lrx.src]);
-
-            vm.cpu.registers[lrx.dst] = vm.FloatToInt(f0 / f1);
-            return false;
+            float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+            float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+            vm.cpu.registers[lrx.dst] = Float32.ToInt(f0 + f1);
+            return Cpu.Status.OK;
         }
 
-        internal static bool ADDF(Script vm) {
+        internal static Cpu.Status SUBF(Script vm) {
             var lrx = new LRX(vm);
-            float f0 = vm.IntToFloat(vm.cpu.registers[lrx.dst]);
-            float f1 = vm.IntToFloat(vm.cpu.registers[lrx.src]);
-
-            vm.cpu.registers[lrx.dst] = vm.FloatToInt(f0 + f1);
-            return false;
-        }
-
-        internal static bool SUBF(Script vm) {
-            var lrx = new LRX(vm);
-            float f0 = vm.IntToFloat(vm.cpu.registers[lrx.dst]);
-            float f1 = vm.IntToFloat(vm.cpu.registers[lrx.src]);
-
-            vm.cpu.registers[lrx.dst] = vm.FloatToInt(f0 - f1);
-            return false;
-        }
-
-        internal static bool CMPF(Script vm) {
-            var lrx = new LRX(vm);
-            float f0 = vm.IntToFloat(vm.cpu.registers[lrx.dst]);
-            float f1 = vm.IntToFloat(vm.cpu.registers[lrx.src]);
-
-            vm.cpu.status.CMP_BELOW = f0 < f1;
-            vm.cpu.status.CMP_EQUAL = f0 == f1;
-            vm.cpu.status.CMP_ABOVE = f0 > f1;
-            return false;
+            float f0 = Float32.FromInt(vm.cpu.registers[lrx.dst]);
+            float f1 = Float32.FromInt(vm.cpu.registers[lrx.src]);
+            vm.cpu.registers[lrx.dst] = Float32.ToInt(f0 - f1);
+            return Cpu.Status.OK;
         }
     }
 
     struct SRX
     {
-        internal const int SIZE = 2;
+        internal const int SIZE = 1;
         internal byte dst;
 
         SRX(Script vm, bool is_jump) {
-            byte op = vm.memory[vm.cpu.ip + 1];
+            int data = vm.memory[vm.cpu.eip];
+            byte op = (byte)((data & 0x00_FF_00_00) >> 16);
 
             if (op > Registers.NUM_REGISTERS) {
-                vm.cpu.status.error = Cpu.Error.BAD_REGISTER;
+                vm.cpu.status = Cpu.Status.BAD_REGISTER;
                 dst = 0;
                 return;
             }
 
             if (is_jump) {
                 // Verify the address is executable
-                uint address = vm.cpu.registers[op];
-                if (address < Header.SIZE || address > vm.cpu.dat) {
-                    vm.cpu.status.error = Cpu.Error.BAD_MEMORY_ACCESS;
-                    address = Header.SIZE;
+                int address = vm.cpu.registers[op];
+                if (address < 0 || address > vm.cpu.dat) {
+                    vm.cpu.status = Cpu.Status.BAD_MEMORY_ACCESS;
+                    address = 0;
                     dst = op;
                     return;
                 }
             } else {
-                vm.cpu.ip += SRX.SIZE;
+                vm.cpu.eip += SRX.SIZE;
             }
 
             dst = op;
         }
 
-        internal static bool CVTFW(Script vm) {
+        internal static Cpu.Status CVTFW(Script vm) {
             var srx = new SRX(vm, is_jump: false);
-            // Convert floating point to word
-            float value = vm.IntToFloat(vm.cpu.registers[srx.dst]);
-            vm.cpu.registers[srx.dst] = (uint)value;
-            return false;
+            float value = Float32.FromInt(vm.cpu.registers[srx.dst]);
+            // Floor float value to convert to int
+            vm.cpu.registers[srx.dst] = (int)value;
+            return Cpu.Status.OK;
         }
 
-        internal static bool CVTWF(Script vm) {
+        internal static Cpu.Status CVTWF(Script vm) {
             var srx = new SRX(vm, is_jump: false);
             // Convert word to floating point
-            float value = vm.cpu.registers[srx.dst];
+            float value = (float)vm.cpu.registers[srx.dst];
 
-            // Store floating point representation in uint value
-            uint repr = vm.FloatToInt(value);
-            vm.cpu.registers[srx.dst] = repr;
-            return false;
+            // Store floating point representation in int value
+            vm.cpu.registers[srx.dst] = Float32.ToInt(value);
+            return Cpu.Status.OK;
         }
 
-        internal static bool HEAP(Script vm) {
+        internal static Cpu.Status ALLOC(Script vm) {
             var srx = new SRX(vm, is_jump: false);
-            uint address = Heap.Alloc(vm, vm.cpu.registers[srx.dst]);
+            int size = vm.cpu.registers[srx.dst];
+            int address = Heap.Alloc(vm, size);
             vm.cpu.registers[Registers.EAX] = address;
-            return false;
+            return Cpu.Status.OK;
         }
 
-        internal static bool PUSH(Script vm) {
+        internal static Cpu.Status FREE(Script vm) {
             var srx = new SRX(vm, is_jump: false);
-            // Stack grows upwards
-            vm.cpu.registers[Registers.ESP] -= 4;
-            uint stack_ptr = vm.cpu.registers[Registers.ESP];
+            int address = vm.cpu.registers[srx.dst];
+            return Heap.Free(vm, address);
+        }
 
-            // if (stack_ptr == Script.MAX_MEMORY) {
-            //     vm.cpu.status.STACK_OVERFLOW = true;
-            //     return;
-            // }
+        internal static Cpu.Status PUSH(Script vm) {
+            var srx = new SRX(vm, is_jump: false);
 
-            uint word = vm.cpu.registers[srx.dst];
+            vm.cpu.registers[Registers.ESP] -= 1;
+            int stack_ptr = vm.cpu.registers[Registers.ESP];
 
+            int word = vm.cpu.registers[srx.dst];
             vm.WriteWord(word, stack_ptr);
-            return false;
+            return Cpu.Status.OK;
         }
 
-        internal static bool POP(Script vm) {
+        internal static Cpu.Status POP(Script vm) {
             var srx = new SRX(vm, is_jump: false);
-            uint stack_ptr = vm.cpu.registers[Registers.ESP];
+            int stack_ptr = vm.cpu.registers[Registers.ESP];
 
             if (stack_ptr > Script.MAX_MEMORY) {
-                vm.cpu.status.error = Cpu.Error.STACK_UNDERFLOW;
-                return true;
+                return Cpu.Status.STACK_UNDERFLOW;
             }
 
-            uint word = (uint)vm.ReadWord(stack_ptr);
-            vm.cpu.registers[Registers.ESP] += 4;
+            int word = vm.ReadWord(stack_ptr);
+            vm.cpu.registers[Registers.ESP] += 1;
             vm.cpu.registers[srx.dst] = word;
-            return false;
+            return Cpu.Status.OK;
         }
 
-        internal static bool RET(Script vm) {
+        internal static Cpu.Status NOT(Script vm) {
+            var srx = new SRX(vm, is_jump: false);
+            int dst = vm.cpu.registers[srx.dst];
+            vm.cpu.registers[srx.dst] = -dst;
+            return Cpu.Status.OK;
+        }
+
+        internal static Cpu.Status NEG(Script vm) {
+            var srx = new SRX(vm, is_jump: false);
+            int dst = vm.cpu.registers[srx.dst];
+            vm.cpu.registers[srx.dst] = -dst;
+            return Cpu.Status.OK;
+        }
+
+        internal static Cpu.Status NEGF(Script vm) {
+            var srx = new SRX(vm, is_jump: false);
+            float f0 = Float32.FromInt(vm.cpu.registers[srx.dst]);
+            vm.cpu.registers[srx.dst] = Float32.ToInt(-f0);
+            return Cpu.Status.OK;
+        }
+
+        internal static Cpu.Status RET(Script vm) {
             var srx = new SRX(vm, is_jump: true);
-            uint address = vm.cpu.registers[srx.dst];
+            int address = vm.cpu.registers[srx.dst];
 
-            vm.cpu.ip = address; // Jump to address
-            return false;
+            if (address == -1) {
+                // Returning to -1 address means the procedure
+                // was called from native code, so we pause
+                // then VM so that native code execution may continue.
+                vm.cpu.status = Cpu.Status.OK;
+                vm.cpu.eip += SRX.SIZE;
+                vm.Halt(1);
+                return Cpu.Status.OK;
+            }
+
+            vm.cpu.eip = address; // Jump to address
+            return Cpu.Status.OK;
         }
 
-        internal static bool HALT(Script vm) {
+        internal static Cpu.Status HALT(Script vm) {
             var srx = new SRX(vm, is_jump: false);
-            uint status_code = vm.cpu.registers[srx.dst];
-
-            vm.Halt((int)status_code);
-            return false;
-        }
-
-        internal static bool NOT(Script vm) {
-            var srx = new SRX(vm, is_jump: false);
-            uint word = vm.cpu.registers[srx.dst];
-            vm.cpu.registers[srx.dst] = ~word;
-            return false;
-        }
-
-        internal static bool FREE(Script vm) {
-            var srx = new SRX(vm, is_jump: false);
-            return Heap.Free(vm, vm.cpu.registers[srx.dst]);
+            int status_code = vm.cpu.registers[srx.dst];
+            vm.Halt(status_code);
+            return Cpu.Status.OK;
         }
     }
 
-    struct IMRX
+    struct IRX
     {
-        internal const int SIZE = 6;
+        internal const int SIZE = 2;
         internal byte dst;
         internal int constant;
 
-        IMRX(Script vm) {
-            byte op0 = vm.memory[vm.cpu.ip + 1];
-            int op1  = vm.ReadWord(vm.cpu.ip + 2);
+        IRX(Script vm) {
+            int data = vm.memory[vm.cpu.eip];
+            byte op0 = (byte)((data & 0x00_FF_00_00) >> 16);
+            int op1  = vm.memory[vm.cpu.eip + 1];
 
             if (op0 > Registers.NUM_REGISTERS) {
-                vm.cpu.status.error = Cpu.Error.BAD_REGISTER;
+                vm.cpu.status = Cpu.Status.BAD_REGISTER;
                 dst = 0;
                 constant = op1;
                 return;
             }
 
-            vm.cpu.ip += IMRX.SIZE;
+            vm.cpu.eip += IRX.SIZE;
             dst = op0;
             constant = op1;
         }
 
-        internal static bool LWA(Script vm) {
-            var imm = new IMRX(vm);
-            uint address = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
-            uint value = (uint)vm.ReadWord(address);
+        internal static Cpu.Status LEA(Script vm) {
+            var irx = new IRX(vm);
+            vm.cpu.registers[irx.dst] = irx.constant;
+            return Cpu.Status.OK;
+        }
+
+        internal static Cpu.Status LDW(Script vm) {
+            var irx = new IRX(vm);
+            int address = vm.cpu.registers[irx.dst] + irx.constant;
+            int value = vm.ReadWord(address);
             vm.cpu.registers[Registers.EAX] = value;
-            return false;
+            return Cpu.Status.OK;
         }
 
-        internal static bool LBA(Script vm) {
-            var imm = new IMRX(vm);
-            int address = (int)vm.cpu.registers[imm.dst] + imm.constant;
-            vm.cpu.registers[Registers.EAX] = vm.memory[address];
-            return false;
-        }
-
-        internal static bool SWA(Script vm) {
-            var imm = new IMRX(vm);
-            uint value = vm.cpu.registers[Registers.EAX];
-            uint address = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
+        internal static Cpu.Status STW(Script vm) {
+            var irx = new IRX(vm);
+            int value = vm.cpu.registers[Registers.EAX];
+            int address = vm.cpu.registers[irx.dst] + irx.constant;
             vm.WriteWord(value, address);
-            return false;
+            return Cpu.Status.OK;
         }
 
-        internal static bool SBA(Script vm) {
-            var imm = new IMRX(vm);
-            uint value = vm.cpu.registers[Registers.EAX];
-            uint address = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
-            vm.WriteByte((byte)value, address);
-            return false;
+        internal static Cpu.Status SLL(Script vm) {
+            var irx = new IRX(vm);
+            int dst = vm.cpu.registers[irx.dst];
+            vm.cpu.registers[irx.dst] = dst << irx.constant;
+            return Cpu.Status.OK;
         }
 
-        internal static bool SLL(Script vm) {
-            var imm = new IMRX(vm);
-            vm.cpu.registers[imm.dst] = vm.cpu.registers[imm.dst] << imm.constant;
-            return false;
-        }
-
-        internal static bool SRL(Script vm) {
-            var imm = new IMRX(vm);
-            vm.cpu.registers[imm.dst] = (uint)((int)vm.cpu.registers[imm.dst] >> imm.constant);
-            return false;
-        }
-
-        internal static bool SRLU(Script vm) {
-            var imm = new IMRX(vm);
-            vm.cpu.registers[imm.dst] = vm.cpu.registers[imm.dst] >> imm.constant;
-            return false;
-        }
-
-        internal static bool ADD(Script vm) {
-            var imm = new IMRX(vm);
-            vm.cpu.registers[imm.dst] = (uint)(vm.cpu.registers[imm.dst] + imm.constant);
-            return false;
-        }
-
-        internal static bool CMP(Script vm) {
-            var imm = new IMRX(vm);
-            int a = (int)vm.cpu.registers[imm.dst];
-            int b = imm.constant;
-
-            vm.cpu.status.CMP_BELOW = a < b;
-            vm.cpu.status.CMP_EQUAL = a == b;
-            vm.cpu.status.CMP_ABOVE = a > b;
-            return false;
-        }
-
-        internal static bool CMPU(Script vm) {
-            var imm = new IMRX(vm);
-            uint a = vm.cpu.registers[imm.dst];
-            uint b = (uint)imm.constant;
-
-            vm.cpu.status.CMP_BELOW = a < b;
-            vm.cpu.status.CMP_EQUAL = a == b;
-            vm.cpu.status.CMP_ABOVE = a > b;
-            return false;
-        }
-
-        internal static bool LEA(Script vm) {
-            var imm = new IMRX(vm);
-            vm.cpu.registers[imm.dst] = (uint)imm.constant;
-            return false;
+        internal static Cpu.Status ADD(Script vm) {
+            var irx = new IRX(vm);
+            int dst = vm.cpu.registers[irx.dst];
+            vm.cpu.registers[irx.dst] += irx.constant;
+            return Cpu.Status.OK;
         }
     }
 
     struct IMM
     {
-        internal const int SIZE = 5;
-        internal uint address;
+        internal const int SIZE = 2;
+        internal int address;
 
         IMM(Script vm, bool is_jump) {
-            uint op = (uint)vm.ReadWord(vm.cpu.ip + 1);
+            int op = vm.memory[vm.cpu.eip + 1];
 
             if (is_jump) {
                 // Verify the address is executable
-                if (op < Header.SIZE || op > vm.cpu.dat) {
-                    vm.cpu.status.error = Cpu.Error.BAD_MEMORY_ACCESS;
-                    address = Header.SIZE;
+                if (op < 0 || op > vm.cpu.dat) {
+                    vm.cpu.status = Cpu.Status.BAD_MEMORY_ACCESS;
+                    address = 0;
                     return;
                 }
             } else {
-                vm.cpu.ip += IMM.SIZE;
+                vm.cpu.eip += IMM.SIZE;
             }
 
             address = op;
         }
 
-        internal static bool JE(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-            if (vm.cpu.status.CMP_EQUAL) {
-                vm.cpu.ip = ja.address;
-                return false;
+        internal static Cpu.Status JMP(Script vm) {
+            var imm = new IMM(vm, is_jump: true);
+
+            vm.cpu.eip = imm.address;
+            return Cpu.Status.OK;
+        }
+
+        internal static Cpu.Status JE(Script vm) {
+            var imm = new IMM(vm, is_jump: true);
+            if (vm.cpu.registers[Registers.EAX] == 1) {
+                vm.cpu.eip = imm.address;
+                return Cpu.Status.OK;
             }
-            vm.cpu.ip += IMM.SIZE;
-            return false;
+            vm.cpu.eip += IMM.SIZE;
+            return Cpu.Status.OK;
         }
 
-        internal static bool JNE(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-            if (!vm.cpu.status.CMP_EQUAL) {
-                vm.cpu.ip = ja.address;
-                return false;
+        internal static Cpu.Status JNE(Script vm) {
+            var imm = new IMM(vm, is_jump: true);
+            if (vm.cpu.registers[Registers.EAX] == 0) {
+                vm.cpu.eip = imm.address;
+                return Cpu.Status.OK;
             }
-            vm.cpu.ip += IMM.SIZE;
-            return false;
+            vm.cpu.eip += IMM.SIZE;
+            return Cpu.Status.OK;
         }
 
-        internal static bool JL(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-            if (vm.cpu.status.CMP_BELOW) {
-                vm.cpu.ip = ja.address;
-                return false;
-            }
-            vm.cpu.ip += IMM.SIZE;
-            return false;
+        internal static Cpu.Status PUSH(Script vm) {
+            var imm = new IMM(vm, is_jump: false);
+            vm.cpu.registers[Registers.ESP] -= 1;
+            int stack_ptr = vm.cpu.registers[Registers.ESP];
+
+            vm.WriteWord(imm.address, stack_ptr);
+            return Cpu.Status.OK;
         }
 
-        internal static bool JLE(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-            if (vm.cpu.status.CMP_BELOW || vm.cpu.status.CMP_EQUAL) {
-                vm.cpu.ip = ja.address;
-                return false;
-            }
-            vm.cpu.ip += IMM.SIZE;
-            return false;
-        }
+        internal static Cpu.Status CALL(Script vm) {
+            var imm = new IMM(vm, is_jump: true);
 
-        internal static bool JG(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-            if (vm.cpu.status.CMP_ABOVE) {
-                vm.cpu.ip = ja.address;
-                return false;
-            }
-            vm.cpu.ip += IMM.SIZE;
-            return false;
-        }
-
-        internal static bool JGE(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-            if (vm.cpu.status.CMP_ABOVE || vm.cpu.status.CMP_EQUAL) {
-                vm.cpu.ip = ja.address;
-                return false;
-            }
-            vm.cpu.ip += IMM.SIZE;
-            return false;
-        }
-
-        internal static bool JMP(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-            vm.cpu.ip = ja.address;
-            return false;
-        }
-
-        internal static bool CALL(Script vm) {
-            var ja = new IMM(vm, is_jump: true);
-
-            vm.cpu.registers[Registers.ESP] -= sizeof(int);
-            uint stack_ptr = vm.cpu.registers[Registers.ESP];
+            vm.cpu.registers[Registers.ESP] -= 1;
+            int stack_ptr = vm.cpu.registers[Registers.ESP];
 
             // Push pointer to next instrcution
-            vm.WriteWord(vm.cpu.ip + IMM.SIZE, stack_ptr);
-            vm.cpu.ip = ja.address; // Jump to address
-            return false;
+            vm.WriteWord(vm.cpu.eip + IMM.SIZE, stack_ptr);
+            vm.cpu.eip = imm.address; // Jump to address
+            return Cpu.Status.OK;
         }
 
-        internal static bool PUSH(Script vm) {
-            var ja = new IMM(vm, is_jump: false);
-            // Stack grows down
-            vm.cpu.registers[Registers.ESP] -= sizeof(int);
-            uint stack_ptr = vm.cpu.registers[Registers.ESP];
-
-            // if (stack_ptr == vm.cpu.stk) {
-            //     vm.cpu.status.STACK_OVERFLOW = true;
-            //     return;
-            // }
-
-            vm.WriteWord(ja.address, stack_ptr);
-            return false;
-        }
-
-        internal static bool SYS(Script vm) {
-            var ja = new IMM(vm, is_jump: false);
+        internal static Cpu.Status CALX(Script vm) {
+            var imm = new IMM(vm, is_jump: false);
             // Call extern procedure
-            SysCallbacks.ExecuteCallback(vm, ja.address);
-            return false;
+            Value v = Runtime.Call(vm, vm.EnvironmentLookup(imm.address));
+
+            if (!v.is_void) {
+                vm.cpu.registers[Registers.EAX] = v.AsInt;
+            }
+
+            return Cpu.Status.OK;
         }
     }
 }

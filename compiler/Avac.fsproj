@@ -17,9 +17,13 @@
     <Compile Include="semantic_analysis.fs" />
     <Compile Include="asm.fs" />
     <Compile Include="ir_compiler.fs" />
+    <Compile Include="asm_generator.fs" />
     <Compile Include="avac.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FsLexYacc" Version="7.0.6" />
+      <Reference Include="MyAssembly">
+      <HintPath>..\vmx\bin\Release\netstandard1.4\Ava.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

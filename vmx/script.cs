@@ -1,6 +1,9 @@
 using System;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+
+using cell = System.Int32;
 
 [assembly: InternalsVisibleTo("AvaDebug")]
 namespace Ava
@@ -8,24 +11,16 @@ namespace Ava
     internal struct Cpu
     {
         internal bool running;
-        internal uint[] registers;
-        internal uint ip; // Instruction Pointer
-        internal uint dat; // Pointer to bottom of data section
-        internal uint heap; // data/heap
-        internal uint hp; // heap pointer
+        internal cell[] registers;
+        internal int eip; // Instruction Pointer
+        internal int dat; // Pointer to bottom of data section
+        internal int heap; // data/heap
+        internal int hp; // heap pointer
         internal Status status;
 
-        internal struct Status
+        internal enum Status
         {
-            internal bool CMP_ABOVE;
-            internal bool CMP_EQUAL;
-            internal bool CMP_BELOW;
-            internal Error error;
-        }
-
-        internal enum Error
-        {
-            NONE,
+            OK,
             BAD_MEMORY_ACCESS,
             BAD_REGISTER,
             BAD_INSTRUCTION,
@@ -36,59 +31,51 @@ namespace Ava
 
     internal struct Registers
     {
-        internal const int NUM_REGISTERS = 5;
+        internal const int NUM_REGISTERS = 4;
         internal const byte EAX = 0; // Accumulator (general purpose)
-        internal const byte ECX = 1; // Counter (general purpose)
-        internal const byte EDX = 2; // Accumulator (general purpos)
-        internal const byte ESP = 3; // Stack pointer
-        internal const byte EBP = 4; // Base pointer (frame pointer)
+        internal const byte EDX = 1; // Accumulator (general purpose)
+        internal const byte ESP = 2; // Stack pointer
+        internal const byte EBP = 3; // Base pointer (frame pointer)
     }
 
     internal struct Header
     {
-        internal const int SIZE = 0xA;
-        internal const int SIGN_SECTION    = 0x0;
-        internal const int SIZE_SECTION    = 0x2;
-        internal const int DAT_PTR_SECTION = 0x6;
-
-        internal byte sign_magic;   // Assembler signature
-        internal byte sign_version; // Bytecode version
-        internal short initial_stack_size;
-        internal short initial_heap_size;
+        internal const int SIZE = 0x20;
+        internal short sign_magic;   // Assembler signature
+        internal short sign_version; // Bytecode version
+        internal int initial_stack_size;
+        internal int initial_heap_size;
+        internal int import_table_ptr;
+        internal int export_table_ptr;
+        internal int text_ptr;
         internal int dat_ptr; // End of text section, start of data section
     }
 
     public class Script
     {
-        //
-        // Allows system calls to use different input/output methods
-        // ie. Using Debug.Write instead of Console.Write when the
-        // print system call is executed. IO callbacks are shared
-        // between abstract machines.
-        //
-        public struct IO
-        {
-            public delegate void WriteDel(string msg, params object[] args);
-            public delegate string ReadDel();
-            public static WriteDel Write;
-            public static ReadDel Read;
-        }
-
         public bool Running {
             get { return cpu.running; }
             set { cpu.running = value; }
         }
 
+        ///
+        /// Memory usage in bytes
+        ///
         public int MemoryUsage {
-            get { return memory.Length; }
+            get { return memory.Length * sizeof(cell); }
         }
+
+        public string Name { get; private set; }
 
         internal const int MAX_MEMORY = 0xFFFFFFF;
         internal Header header;
         internal Cpu cpu;
-        internal byte[] memory;
+        internal cell[] memory;
 
-        internal static Func<Script, bool>[] instruction_table = new Func<Script, bool>[64] {
+        Dictionary<string, int> locals;
+        Dictionary<int, string> imports;
+
+        internal static Func<Script, Cpu.Status>[] instruction_table = new Func<Script, Cpu.Status>[64] {
             /* 0x00 */    LRX.SLL,
             /* 0x01 */    LRX.SRL,
             /* 0x02 */    LRX.SRLU,
@@ -100,125 +87,214 @@ namespace Ava
             /* 0x08 */    LRX.ADD,
             /* 0x09 */    LRX.SUB,
             /* 0x0A */    LRX.MOV,
-            /* 0x0B */    LRX.CMP,
-            /* 0x0C */    LRX.CMPU,
-            /* 0x0D */    LRX.AND,
-            /* 0x0E */    LRX.OR,
-            /* 0x0F */    LRX.XOR,
-            /* LRX-F */
-            /* 0x10 */    null,
-            /* 0x11 */    null,
-            /* 0x12 */    LRX.MULF,
-            /* 0x13 */    LRX.DIVF,
-            /* 0x14 */    LRX.ADDF,
-            /* 0x15 */    LRX.SUBF,
-            /* 0x16 */    LRX.CMPF,
+            /* 0x0B */    LRX.AND,
+            /* 0x0C */    LRX.OR,
+            /* 0x0D */    LRX.XOR,
+            /* 0x0E */    LRX.CEQ,
+            /* 0x0F */    LRX.CNE,
+            /* 0x10 */    LRX.CLT,
+            /* 0x11 */    LRX.CLE,
+            /* 0x12 */    LRX.CGT,
+            /* 0x13 */    LRX.CGE,
+            /* 0x14 */    LRX.CLTU,
+            /* 0x15 */    LRX.CLEU,
+            /* 0x16 */    LRX.CGTU,
+            /* 0x17 */    LRX.CGEU,
+            /* 0x18 */    LRX.CLTF,
+            /* 0x19 */    LRX.CLEF,
+            /* 0x1A */    LRX.CGTF,
+            /* 0x1B */    LRX.CGEF,
+            /* 0x1C */    LRX.MULF,
+            /* 0x1D */    LRX.DIVF,
+            /* 0x1E */    LRX.ADDF,
+            /* 0x1F */    LRX.SUBF,
 
-            /* SRX-F */
-            /* 0x17 */    SRX.CVTFW,
-            /* 0x18 */    SRX.CVTWF,
-            /* SRX  */
-            /* 0x19 */    SRX.HEAP,
-            /* 0x1A */    SRX.PUSH,
-            /* 0x1B */    SRX.POP,
-            /* 0x1C */    SRX.NOT,
-            /* 0x1D */    SRX.RET,
-            /* 0x1E */    SRX.HALT,
-            /* 0x1F */    SRX.FREE,
+            /* 0x20 */    SRX.CVTFW,
+            /* 0x21 */    SRX.CVTWF,
+            /* 0x22 */    SRX.ALLOC,
+            /* 0x23 */    SRX.FREE,
+            /* 0x24 */    SRX.PUSH,
+            /* 0x25 */    SRX.POP,
+            /* 0x26 */    SRX.NOT,
+            /* 0x27 */    SRX.NEG,
+            /* 0x28 */    SRX.NEGF,
+            /* 0x29 */    SRX.RET,
+            /* 0x2A */    SRX.HALT,
 
-            /* 0x20 */    null,
-            /* 0x21 */    null,
-            /* 0x22 */    null,
-            /* 0x23 */    null,
+            /* 0x2B */    null,
+            /* 0x2C */    null,
 
-            /* 0x24 */    IMRX.LWA,
-            /* 0x25 */    IMRX.LBA,
-            /* 0x26 */    IMRX.SWA,
-            /* 0x27 */    IMRX.SBA,
-            /* 0x28 */    IMRX.SLL,
-            /* 0x29 */    IMRX.SRL,
-            /* 0x2A */    IMRX.SRLU,
-            /* 0x2B */    IMRX.ADD,
-            /* 0x2C */    IMRX.CMP,
-            /* 0x2D */    IMRX.CMPU,
-            /* 0x2E */    IMRX.LEA,
+            /* 0x2D */    IRX.LDW,
+            /* 0x2E */    IRX.LEA,
+            /* 0x2F */    IRX.STW,
+            /* 0x30 */    IRX.ADD,
+            /* 0x31 */    IRX.SLL,
 
-            /* 0x2F */    null,
-            /* 0x30 */    null,
-            /* 0x31 */    null,
             /* 0x32 */    null,
             /* 0x33 */    null,
+            /* 0x34 */    null,
+            /* 0x35 */    null,
+            /* 0x36 */    null,
+            /* 0x37 */    null,
+            /* 0x38 */    null,
+            /* 0x39 */    null,
 
-            /* 0x34 */    IMM.JE,
-            /* 0x35 */    IMM.JNE,
-            /* 0x36 */    IMM.JL,
-            /* 0x37 */    IMM.JLE,
-            /* 0x38 */    IMM.JG,
-            /* 0x39 */    IMM.JGE,
             /* 0x3A */    IMM.JMP,
-            /* 0x3B */    IMM.PUSH,
-            /* 0x3C */    IMM.CALL,
-            /* 0x3D */    IMM.SYS,
+            /* 0x3B */    IMM.JE,
+            /* 0x3C */    IMM.JNE,
+            /* 0x3D */    IMM.PUSH,
+            /* 0x3E */    IMM.CALL,
+            /* 0x3F */    IMM.CALX,
 
-            /* 0x3E */    null,
-            /* 0x3F */    null,
         };
 
-        public Script(byte[] bytecode) {
-            memory = bytecode;
+        public Script(string name) {
+            Name = name;
         }
 
-        public bool Initialize() {
+        public bool Initialize(byte[] bytecode) {
             cpu = new Cpu() {
-                registers = new uint[Registers.NUM_REGISTERS],
+                registers = new int[Registers.NUM_REGISTERS],
                 status = new Cpu.Status(),
                 // ip starts out pointing to the beginning of text section
-                ip = Header.SIZE
+                eip = Header.SIZE
             };
 
             // Stack pointer starts at the top of memory
             cpu.registers[Registers.ESP] = MAX_MEMORY;
 
-            int stack_heap = ReadWord(Header.SIZE_SECTION);
-
             header = new Header() {
-                sign_magic = ReadByte(Header.SIGN_SECTION),
-                sign_version = ReadByte(Header.SIGN_SECTION + 1),
-                initial_stack_size = 16,//(short)stack_heap,
-                initial_heap_size = 8, // @Temporary
-                dat_ptr = ReadWord(Header.DAT_PTR_SECTION)
+                sign_magic         = (short)(bytecode[0] | (bytecode[1] << 8)),
+                sign_version       = (short)(bytecode[2] | (bytecode[3] << 8)),
+                initial_stack_size = ReadWord(bytecode, 4),
+                initial_heap_size  = ReadWord(bytecode, 8),
+                import_table_ptr   = ReadWord(bytecode, 12),
+                export_table_ptr   = ReadWord(bytecode, 16),
+                text_ptr           = ReadWord(bytecode, 20),
+                dat_ptr            = ReadWord(bytecode, 24)
             };
 
             // @Todo: verify signature
+            int memory_size =
+                (bytecode.Length >> 2)
+                + header.initial_heap_size
+                + header.initial_stack_size
+                - (header.text_ptr >> 2);
+
+            memory = new cell[memory_size];
+
+            imports = new Dictionary<int, string>();
+            locals  = new Dictionary<string, int>();
+
+            // @Todo import table
+
+            for (int i = header.import_table_ptr + 4; i < header.export_table_ptr;) {
+                // Assuming UTF32 encoded string
+                string name = Ava.String.FromBytes(bytecode, i);
+                imports.Add(i >> 2, name);
+
+                // String length in bytes + length value
+                i += (name.Length * sizeof(cell)) + sizeof(cell);
+            }
+
+            for (int i = header.export_table_ptr + 4; i < header.text_ptr;) {
+                // Assuming UTF32 encoded string
+                string name = Ava.String.FromBytes(bytecode, i);
+                i += (name.Length * sizeof(cell));
+
+                int ptr = Script.ReadWord(bytecode, i);
+                i += sizeof(int) * 2;
+
+                locals.Add(name, ptr);
+            }
+
+            {
+                int address = 0;
+                for (int i = header.text_ptr; i < bytecode.Length; i += 4) {
+                    memory[address] = Script.ReadWord(bytecode, i);
+                    address++;
+                }
+            }
+
+            cpu.registers = new cell[Registers.NUM_REGISTERS];
 
             // Stack currently empty, stk points to the lowest possible
             // address for the stack pointer, which is the end of the
             // data section.
-            //cpu.stk  = (uint)memory.Length;
-            cpu.heap = (uint)memory.Length;
-            cpu.dat = (uint)header.dat_ptr;
-            cpu.hp = (uint)(cpu.heap + header.initial_heap_size);
-
-            int mem_size = memory.Length
-                         + header.initial_stack_size
-                         + header.initial_heap_size;
-
-            // Increase memory capacity to fit the stack and heap
-            Array.Resize(ref memory, mem_size);
+            cpu.dat  = ((header.dat_ptr >> 2) - (header.text_ptr >> 2));
+            cpu.heap = cpu.dat + 1;
+            cpu.hp   = (cpu.heap + header.initial_heap_size);
+            cpu.eip  = 0;
+            cpu.registers[Registers.ESP] = MAX_MEMORY;
             return true;
         }
 
-        //
-        // Advance the virtual machine until the cpu halts
-        // or the intruction pointer reaches the start of
-        // the data section.
-        //
-        public void Run() {
+        public Value Call(string procedure) {
+            cell stack_ptr = cpu.registers[Registers.ESP];
+            return CallHelper(procedure, stack_ptr);
+        }
+
+        public Value Call(string procedure, Value a0) {
+            cell stack_ptr = cpu.registers[Registers.ESP];
+            WriteWord(a0.AsInt, --stack_ptr);
+
+            return CallHelper(procedure, stack_ptr);
+        }
+
+        public Value Call(string procedure, Value a0, Value a1) {
+            cell stack_ptr = cpu.registers[Registers.ESP];
+            WriteWord(a1.AsInt, --stack_ptr);
+            WriteWord(a0.AsInt, --stack_ptr);
+
+            return CallHelper(procedure, stack_ptr);
+        }
+
+        public Value Call(string procedure, Value a0, Value a1, Value a2) {
+            cell stack_ptr = cpu.registers[Registers.ESP];
+            WriteWord(a2.AsInt, --stack_ptr);
+            WriteWord(a1.AsInt, --stack_ptr);
+            WriteWord(a0.AsInt, --stack_ptr);
+
+            return CallHelper(procedure, stack_ptr);
+        }
+
+        public Value Call(string procedure, Value a0, Value a1, Value a2, Value a3) {
+            cell stack_ptr = cpu.registers[Registers.ESP];
+            WriteWord(a3.AsInt, --stack_ptr);
+            WriteWord(a2.AsInt, --stack_ptr);
+            WriteWord(a1.AsInt, --stack_ptr);
+            WriteWord(a0.AsInt, --stack_ptr);
+
+            return CallHelper(procedure, stack_ptr);
+        }
+
+        public Value Call(string procedure, params Value[] args) {
+            cell stack_ptr = cpu.registers[Registers.ESP];
+
+            for (int i = args.Length - 1; i >= 0; i--) {
+                // Arguments must be pushed to the stack in reverse order
+                WriteWord(args[i].AsInt, --stack_ptr);
+            }
+
+            return CallHelper(procedure, stack_ptr);
+        }
+
+        internal Value CallHelper(string procedure, int stack_ptr) {
+            ulong ins = 0;
+            cpu.eip = locals[procedure];
+
+            // Push return address 0xFFFFFFFF
+            WriteWord(-1, --stack_ptr);
+            cpu.registers[Registers.ESP] = stack_ptr;
             cpu.running = true;
 
-            while (cpu.running && cpu.ip < cpu.dat) {
+            while (cpu.running && cpu.eip < cpu.dat) {
                 Advance();
+                ins += 1;
             }
+
+            Runtime.Write(string.Format("cycles: {0} million\n", (double)ins / 1_000_000));
+            return new Value(cpu.registers[Registers.EAX]);
         }
 
         //
@@ -226,10 +302,10 @@ namespace Ava
         // the instruction pointer.
         //
         public void Advance() {
-            byte opcode = memory[cpu.ip];
-            bool error = Execute(opcode);
+            cell instruction = memory[cpu.eip];
+            cpu.status = Execute(instruction);
 
-            if (error || cpu.status.error != 0) {
+            if (cpu.status != Cpu.Status.OK) {
                 Halt(-1);
             }
         }
@@ -241,13 +317,18 @@ namespace Ava
         //    0: Halt, reset the VM
         //    1: Halt, but save the machine state
         //
-        public void Halt(int exit_code = 0, uint address = 0) {
+        public void Halt(int exit_code = 0, int address = 0) {
             cpu.running = false;
 
             switch (exit_code) {
                 case -1: {
                         // Issue fatal error
-                        IO.Write("Fatal: {0} ({1:X8})\n", cpu.status.error, address);
+                        Runtime.Write(string.Format("Fatal: {0} (0x{1:X8})\n\n", cpu.status, address));
+                        Runtime.Write(string.Format("    eip: {0:X8}\n", cpu.eip));
+                        Runtime.Write(string.Format("    eax: {0:X8}\n", cpu.registers[0]));
+                        Runtime.Write(string.Format("    edx: {0:X8}\n", cpu.registers[1]));
+                        Runtime.Write(string.Format("    esp: {0:X8}\n", cpu.registers[2]));
+                        Runtime.Write(string.Format("    ebp: {0:X8}\n", cpu.registers[3]));
                         Reset();
                         break;
                     }
@@ -255,17 +336,22 @@ namespace Ava
                 case 1: break; // Halt but save instruction pointer and registers
 
                 default:
-                case 0: Reset(); break; // Halt and reset
+                case 0: {
+                    // Halt and reset
+                    Reset();
+                    break;
+                }
             }
         }
 
         public void Reset() {
-            cpu.registers = new uint[Registers.NUM_REGISTERS];
+            cpu.registers = new cell[Registers.NUM_REGISTERS];
             cpu.status = new Cpu.Status();
-            cpu.ip = Header.SIZE;
-            cpu.hp = (uint)(cpu.heap + header.initial_heap_size);
+            cpu.eip = Header.SIZE;
+            cpu.hp = (cpu.heap + header.initial_heap_size);
 
 
+            // @Todo
             int mem_size = (int)cpu.heap
                          + header.initial_stack_size
                          + header.initial_heap_size;
@@ -275,26 +361,24 @@ namespace Ava
             cpu.registers[Registers.ESP] = MAX_MEMORY;
         }
 
-        public void WriteWord(uint value, uint virtual_address) {
-            StackAlloc(); // Ensure there is enough memory
-            uint address = ConvertToRealAddress(virtual_address);
+        public Value Argument(int argument_index) {
+            int address = cpu.registers[Registers.ESP];
 
-            if (SegFault(address, sizeof(int))) {
-                Halt(-1, virtual_address);
-                return;
+            if (address > Script.MAX_MEMORY) {
+                cpu.status = Cpu.Status.STACK_UNDERFLOW;
+                Halt(-1);
+                return Value.Void;
             }
 
-            memory[address + 0] = (byte)((value & 0xff));
-            memory[address + 1] = (byte)((value & 0xff00) >> 8);
-            memory[address + 2] = (byte)((value & 0xff0000) >> 16);
-            memory[address + 3] = (byte)((value & 0xff000000) >> 24);
+            int value = (int)ReadWord(address + argument_index);
+            return new Value(value, this);
         }
 
-        public void WriteByte(byte value, uint virtual_address) {
-            StackAlloc();
-            uint address = ConvertToRealAddress(virtual_address);
+        public void WriteWord(int value, int virtual_address) {
+            StackAlloc(); // Ensure there is enough memory
+            int address = ConvertToRealAddress(virtual_address);
 
-            if (SegFault(address, sizeof(byte))) {
+            if (SegFault(address, 1)) {
                 Halt(-1, virtual_address);
                 return;
             }
@@ -302,101 +386,63 @@ namespace Ava
             memory[address] = value;
         }
 
-        public int ReadWord(uint virtual_address) {
-            uint address = ConvertToRealAddress(virtual_address);
+        public int ReadWord(int virtual_address) {
+            int address = ConvertToRealAddress(virtual_address);
 
-            if (SegFault(address, sizeof(int))) {
+            if (SegFault(address, 1)) {
                 Halt(-1, virtual_address);
                 return -1;
-            }
-
-            byte b0  = memory[address + 0];
-            byte b1  = memory[address + 1];
-            byte b2  = memory[address + 2];
-            byte b3  = memory[address + 3];
-
-            return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
-        }
-
-        public byte ReadByte(uint virtual_address) {
-            uint address = ConvertToRealAddress(virtual_address);
-
-            if (SegFault(address, sizeof(int))) {
-                Halt(-1, virtual_address);
-                return 0xFF;
             }
 
             return memory[address];
         }
 
-        public string ReadString(uint virtual_address) {
-            uint address = ConvertToRealAddress(virtual_address);
+        internal static int ReadWord(byte[] bytes, int start) {
+            byte b0  = bytes[start + 0];
+            byte b1  = bytes[start + 1];
+            byte b2  = bytes[start + 2];
+            byte b3  = bytes[start + 3];
 
-            // First word in a string is the string size
-            int size = ReadWord(address - sizeof(int));
-            return Encoding.UTF8.GetString(memory, (int)address, size);
+            return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
         }
 
-        public uint PopArg() {
-            uint stack_ptr = cpu.registers[Registers.ESP];
+        internal Cpu.Status Execute(int data) {
+            byte opcode = (byte)(data & 0x000000FF);
 
-            if (stack_ptr > Script.MAX_MEMORY) {
-                cpu.status.error = Cpu.Error.STACK_UNDERFLOW;
-                Halt(-1);
-                return 0xFFFFFFFF;
-            }
-
-            uint value = (uint)ReadWord(stack_ptr);
-            cpu.registers[Registers.ESP] += sizeof(int);
-
-            return value;
-        }
-
-        public uint ReadRegister(byte register) {
-            if (register > Registers.NUM_REGISTERS) {
-                cpu.status.error = Cpu.Error.BAD_REGISTER;
-                return 0xFFFFFFFF;
-            }
-            return cpu.registers[register];
-        }
-
-        internal uint FloatToInt(float value) {
-            return BitConverter.ToUInt32(BitConverter.GetBytes(value), 0);
-        }
-
-        internal float IntToFloat(uint value) {
-            return BitConverter.ToSingle(BitConverter.GetBytes(value), 0);
-        }
-
-        internal bool Execute(byte opcode) {
             if (opcode > instruction_table.Length) {
                 // Unknown instruction
-                cpu.status.error = Cpu.Error.BAD_INSTRUCTION;
-                return true;
+                return Cpu.Status.BAD_INSTRUCTION;
             }
 
             var instruction = instruction_table[opcode];
 
             if (instruction == null) {
                 // Unavalable instruction
-                cpu.status.error = Cpu.Error.BAD_INSTRUCTION;
-                return true;
+                return Cpu.Status.BAD_INSTRUCTION;
             }
 
             return instruction(this);
         }
 
-        internal bool SegFault(uint address, int size) {
+        internal string EnvironmentLookup(int import_address) {
+            return imports[import_address];
+        }
+
+        bool SegFault(int address, int size) {
             if (/*address < cpu.dat  || */ (address + size) > memory.Length) {
                 // Attempt to write to text section, header or outside
                 // memory bounds.
-                cpu.status.error = Cpu.Error.BAD_MEMORY_ACCESS;
+                cpu.status = Cpu.Status.BAD_MEMORY_ACCESS;
                 return true;
             }
             return false;
         }
 
-        internal uint ConvertToRealAddress(uint virtual_address) {
+        internal void MemCopy(int src, int dst, int length) {
+            Array.Copy(memory, src, memory, dst, length);
+        }
+
+        internal int ConvertToRealAddress(int virtual_address) {
             // The stack grows down from higher addresses, we can map virtual stack
             // addresses to memory locations by subtracting the virtual_address
             // offset from the total memory capacity.
@@ -408,26 +454,25 @@ namespace Ava
                 return virtual_address;
             }
 
-            return (uint)real_address;
+            return real_address;
         }
 
         internal void StackAlloc() {
             // Use esp to determine if the stack is full
-            uint esp = cpu.registers[Registers.ESP];
-            uint address = ConvertToRealAddress(esp);
+            cell esp = cpu.registers[Registers.ESP];
+            int address = ConvertToRealAddress(esp);
 
-            if (address > cpu.hp) {
-                // @Todo: address > cpu.hp
+            if (address > cpu.hp + 1) {
                 // We already have enough memory
                 return;
             }
 
             // Double the stack size
-            int stack_size   = memory.Length - (int)cpu.hp;
+            int stack_size = memory.Length - cpu.hp;
 
             Array.Resize(ref memory, memory.Length + stack_size);
             // Move current stack to allocated stack section
-            Array.Copy(memory, (int)cpu.hp, memory, (int)cpu.hp + stack_size, stack_size);
+            Array.Copy(memory, cpu.hp, memory, cpu.hp + stack_size, stack_size);
         }
     }
 }

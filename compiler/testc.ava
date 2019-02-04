@@ -1,4 +1,4 @@
-fib :: (n: int) -> int do
+function fib(n: int) -> int do
     z: int
     a := 0
     b := 1
@@ -14,14 +14,16 @@ fib :: (n: int) -> int do
     return a
 end
 
-fact :: (n: int) -> int do
+
+function fact(n: int) -> int do
     if n == 0 then
         return 1
     end
     return n * fact(n - 1)
 end
 
-hanoi :: (n: int, fromrod: int, torod: int, auxrod: int) do
+
+function hanoi(n: int, fromrod: int, torod: int, auxrod: int) do
     if (n == 1) then
         return
     end
@@ -30,17 +32,20 @@ hanoi :: (n: int, fromrod: int, torod: int, auxrod: int) do
     hanoi(n - 1, auxrod, torod, fromrod);
 end
 
-main :: () -> int do
+
+function main -> int do
     array : [] of int
 
-    array = append(array, 12)
-    array = append(array, 13)
-    array[1] = 14
+    array = push(array, 12)
+    array = push(array, 14)
+    array = push(array, 14)
+    array[1] = 16
 
     printf("%ncount: %d, cap: %d%n", array[-1], array[-2])
     printf("first: %d, last: %d%n", array[0], array[array[-1]-1])
 
     printf("[")
+
     i := 0
 
     while i < array[-1] do
@@ -58,6 +63,10 @@ main :: () -> int do
     return 0
 end
 
-#extern printf :: (fmt: str, e: $$ #unchecked) -> void
-#extern append :: (a: []$, e: $) -> int
-#extern read_int :: (fmt: int) -> int
+
+#extern printf(fmt: str, e: $$ #unchecked)
+#extern push(a: []$, e: $) -> int
+#extern pop(a: []$) -> int
+#extern fill(a: []$, value: $)
+#extern clear(a: []$)
+#extern read_int(fmt: int) -> int

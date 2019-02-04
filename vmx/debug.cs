@@ -1,5 +1,9 @@
 using System.Reflection;
 
+
+// @Temporary Debug disabled
+#if false
+
 namespace Ava
 {
     public class Debug
@@ -77,3 +81,5 @@ namespace Ava
         }
     }
 }
+
+#endif
