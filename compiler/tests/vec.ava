@@ -1,0 +1,65 @@
+--
+-- Handle vector input
+-- Currently the language does not support string comp
+-- so we use integers for control.
+--
+-- 7: Left
+-- 8: Down
+-- 9: Up
+-- 0: Right
+--
+-- Compiler bugs
+-- v := vec[0] + delta (Expected memory addressable variable)
+-- vec[0] = v + delta (Expected memory addressabe variable)
+--
+
+#extern printf(fmt: str, e: $$ #unchecked)
+#extern read_int() -> int
+
+
+delta := 0.1
+vec: [2] of float
+
+
+event main() -> int do
+    vec[0] = 0.0
+    vec[1] = 0.0
+
+    while 1 do
+        input(read_int())
+        printvec()
+    end
+end
+
+
+input(key: int) do
+    if key == 7 then
+        v : float = vec[0]
+        v = v - delta
+        vec[0] = v
+    elsif key == 8 then
+        v : float = vec[1]
+        v = v - delta
+        vec[1] = v
+    elsif key == 9 then
+        v : float = vec[1]
+        v = v + delta
+        vec[1] = v
+    elsif key == 0 then
+        v : float = vec[0]
+        v = v + delta
+        vec[0] = v
+    elsif key == 1 then
+        delta = delta - 0.1
+    elsif key == 2 then
+        delta = delta + 0.1
+    else
+        printf("unknown key '%d'%n", key)
+    end
+end
+
+
+printvec -> void do
+    printf("(%f, %f)%n", vec[0], vec[1])
+    printf("(%f)%n",delta)
+end

@@ -49,6 +49,20 @@ and TypeSpec =
     | Tu     // $ #unchecked
     | TSequ  // $$ #unchecked
 
+    override x.ToString() =
+        match x with
+        | Void   -> "void"
+        | Int    -> "int"
+        | Float  -> "float"
+        | Byte   -> "byte"
+        | Char   -> "char"
+        | Text   -> "pstr"
+        | String -> "str"
+        | T      -> "$"
+        | TSeq   -> "$$"
+        | Tu     -> "$?"
+        | TSequ  -> "$$?"
+
 and Identifier = string
 
 and Parameters = VariableDecl list

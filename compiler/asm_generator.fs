@@ -127,6 +127,7 @@ let compile (ir : IR) =
             proc.Body |> List.iteri (fun i line ->
                 if i > pos + 0 then
                     match line with
+                    // @Todo: All instructions
                     | IRCompiler.Add(_, lhs, rhs)
                     | IRCompiler.Sub(_, lhs, rhs)
                     | IRCompiler.Mul(_, lhs, rhs)
@@ -309,7 +310,28 @@ let compile (ir : IR) =
                     | Ast.Int ->
                         match int_opcode with
                         | Some(opcode) -> emit(opcode r)
-                        | None -> printfn "FATAL: %A undefined for 'int'" int_opcode
+                        | None -> printfn "FATAL: %A undefined for 'int'" float_opcode
+                    | Ast.Float ->
+                        match float_opcode with
+                        | Some(opcode) -> emit(opcode r)
+                        | None -> printfn "FATAL: %A undefined for 'float'" int_opcode
+                    | _ -> printfn "FATAL: Invalid type for instruction."
+                | _ -> ()
+
+            let unary_op dst rhs int_opcode float_opcode =
+                load_eax pos rhs
+                store_eax dst
+
+                match dst with
+                | Ptr(op)
+                | Var(op) ->
+                    let r = Register.EAX
+
+                    match op.Type.Type with
+                    | Ast.Int ->
+                        match int_opcode with
+                        | Some(opcode) -> emit(opcode r)
+                        | None -> printfn "FATAL: %A undefined for 'int'" float_opcode
                     | Ast.Float ->
                         match float_opcode with
                         | Some(opcode) -> emit(opcode r)
@@ -345,23 +367,30 @@ let compile (ir : IR) =
                 load_eax pos src
                 store_eax dst
                 free_register pos Register.EAX true
-            | IRCompiler.Add(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Add) (Some Asm.Addf)
-            | IRCompiler.Sub(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Sub) (Some Asm.Subf)
-            | IRCompiler.Mul(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Mul) (Some Asm.Mulf)
-            | IRCompiler.Div(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Div) (Some Asm.Divf)
-            | IRCompiler.Mod(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Mod) None
-            | IRCompiler.BitOr(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Or) None
+            | IRCompiler.Add(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Add) (Some Asm.Addf)
+            | IRCompiler.Sub(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Sub) (Some Asm.Subf)
+            | IRCompiler.Mul(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Mul) (Some Asm.Mulf)
+            | IRCompiler.Div(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Div) (Some Asm.Divf)
+            | IRCompiler.Mod(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Mod) None
+            | IRCompiler.BitOr(dst, lhs, rhs)  -> binary_op dst lhs rhs (Some Asm.Or) None
             | IRCompiler.BitXor(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Xor) None
             | IRCompiler.BitAnd(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.And) None
-            | IRCompiler.Ceq(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Ceq) (Some Asm.Ceq)
-            | IRCompiler.Cne(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Cne) (Some Asm.Cne)
-            | IRCompiler.Clt(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Clt) (Some Asm.Cltf)
-            | IRCompiler.Cle(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Cle) (Some Asm.Clef)
-            | IRCompiler.Cgt(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Cgt) (Some Asm.Cgtf)
-            | IRCompiler.Cge(dst, lhs, rhs) -> binary_op dst lhs rhs (Some Asm.Cge) (Some Asm.Cgef)
-            // @Temporary: Until neg instruction is added
-            | IRCompiler.Neg(dst, lhs) -> binary_op dst lhs (Const -1) (Some Asm.Mul) (Some Asm.Mulf)
-            // @Todo: Not
+            | IRCompiler.Ceq(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Ceq) (Some Asm.Ceq)
+            | IRCompiler.Cne(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Cne) (Some Asm.Cne)
+            | IRCompiler.Clt(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Clt) (Some Asm.Cltf)
+            | IRCompiler.Cle(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Cle) (Some Asm.Clef)
+            | IRCompiler.Cgt(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Cgt) (Some Asm.Cgtf)
+            | IRCompiler.Cge(dst, lhs, rhs)    -> binary_op dst lhs rhs (Some Asm.Cge) (Some Asm.Cgef)
+            | IRCompiler.Neg(dst, rhs)         -> unary_op dst rhs (Some Asm.Neg) (Some Asm.Negf)
+            | IRCompiler.BitNot(dst, rhs)      -> unary_op dst rhs (Some Asm.Not) (Some Asm.Not)
+            | Cvtfw(dst, rhs) ->
+                load_eax pos rhs
+                store_eax dst
+                emit(Asm.Cvtfw Register.EAX)
+            | Cvtwf(dst, rhs) ->
+                load_eax pos rhs
+                store_eax dst
+                emit(Asm.Cvtwf Register.EAX)
             | IfFalse(op, l) ->
                 load_eax pos op
                 emit(Jne(Asm.Label l))
@@ -383,7 +412,6 @@ let compile (ir : IR) =
                 emit(Asm.Calx(Asm.Label proc))
                 store_eax dst
                 free_register pos Register.EAX false
-            // @Todo: Call extern
             | Ret(res) ->
                 match proc.EndLabel with
                 | Some(l) ->
@@ -399,8 +427,6 @@ let compile (ir : IR) =
                 // @Performance: Use edx?
                 load_eax pos op
                 emit(Asm.Free(Register.EAX))
-            // @Todo: Endproc
-            | _ -> ()
 
         proc.Body |> List.iteri (fun i x -> compile_ir i x)
 
@@ -433,7 +459,9 @@ let compile (ir : IR) =
             imports <- { Name = p.Name; Label = p.Name } :: imports
         else
             emit(Asm.Lab(p.Name))
-            exports <- { Name = p.Name; Label = p.Name } :: exports
+
+            if p.IsExport then
+                exports <- { Name = p.Name; Label = p.Name } :: exports
 
             if p.Body.Length <= 1 then
                 // This is an empty procedure,

@@ -1,0 +1,43 @@
+
+
+--
+-- Compute sine using Taylor Series definition
+-- Slow but a cool demo
+--
+
+#extern printf(fmt: str, e: $$ #unchecked)
+#extern pow(a: float, b: float) -> float
+
+
+precision := 6
+pi        := 3.14159265359
+epsilon   := 0.00001
+
+
+main -> int do
+    deg: float
+    printf("sin pi/2 = %f%n", sin(4))
+    return 0
+end
+
+
+fact(n: int) -> int do
+    if n == 0 then
+        return 1
+    end
+
+    return n * fact(n - 1)
+end
+
+
+sin(x: float) -> float do
+    sum : float
+    i   : int
+
+    while i <= precision do
+        sum = sum + (((pow(-1.0, float(i)))/ float(fact(2*i + 1))) * pow(x, float(2*i + 1)))
+        i = i + 1
+    end
+
+    return sum
+end

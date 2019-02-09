@@ -112,6 +112,8 @@ type ProcedureTable(program: Program) as self =
         | DeclNop -> ()
 
     do
+        self.Add("float", { ReturnType = Float; ParameterTypes = [scalar_type Int]; IsExtern = false })
+        self.Add("int", { ReturnType = Int; ParameterTypes = [scalar_type Float]; IsExtern = false })
         // Scan entire ast for top level procedure declarations
         program |> List.iter scan_decl
 
@@ -444,7 +446,27 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                 let typeof_lhs = scan_expression lhs
                 let typeof_rhs = scan_expression rhs
 
+                let arithmetic_op (op: string) =
+                    // @Temporary: Do not allow implicit casting (type coersion)
+                    if typeof_lhs <> typeof_rhs then
+                        printfn "%s not supported for %A and %A" op (typeof_lhs.Type) (typeof_rhs.Type)
+
+                    if typeof_lhs.IsArray || typeof_rhs.IsArray then
+                        // @Todo: Error
+                        // @Todo: Print array types better
+                        printfn "%s not supported for %A and %A" op (typeof_lhs.Type) (typeof_rhs.Type)
+                    elif typeof_lhs <> typeof_lhs then
+                        // @Todo: Error
+                        printfn "Type %A does not match %A for %s operator" (typeof_lhs.Type) (typeof_rhs.Type) op
+
+                    typeof_lhs
+
                 match op with
+                | Add -> arithmetic_op "+"
+                | Sub -> arithmetic_op "-"
+                | Mul -> arithmetic_op "*"
+                | Div -> arithmetic_op "/"
+                | Mod -> arithmetic_op "%"
                 | CondOr | CondAnd | Xor ->
                     scalar_type Int // Conditional expressions resolve to int
                 | Eq | NotEq ->
@@ -460,8 +482,6 @@ type ExpressionTable(program, proc_table: ProcedureTable, symbol_table: SymbolTa
                         ()
                     | _ -> printfn "TypeError %s cannot be applied to %s and %s" (op.ToString()) (typeof_lhs.ToString()) (typeof_rhs.ToString())
                     scalar_type Int
-                | Add | Sub | Mul | Div | Mod ->
-                    typeof_lhs // @Temporary: casting
             | UnaryExpression(_, e) -> scan_expression e
             | IdentifierExpression(id) -> symbol_table.GetIdentifierType id
             | ArrayIdentifierExpression(id, e) ->

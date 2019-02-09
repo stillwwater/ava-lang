@@ -1,4 +1,4 @@
-function fib(n: int) -> int do
+fib(n: int) -> int do
     z: int
     a := 0
     b := 1
@@ -15,7 +15,7 @@ function fib(n: int) -> int do
 end
 
 
-function fact(n: int) -> int do
+fact(n: int) -> int do
     if n == 0 then
         return 1
     end
@@ -23,7 +23,15 @@ function fact(n: int) -> int do
 end
 
 
-function hanoi(n: int, fromrod: int, torod: int, auxrod: int) do
+factf(n: float) -> float do
+    if n <= 0.001 then
+        return 1.0
+    end
+    return n * factf(n - 1.0)
+end
+
+
+hanoi(n: int, fromrod: int, torod: int, auxrod: int) do
     if (n == 1) then
         return
     end
@@ -33,8 +41,13 @@ function hanoi(n: int, fromrod: int, torod: int, auxrod: int) do
 end
 
 
-function main -> int do
+main -> int do
     array : [] of int
+
+    do
+        printf("factorial(6) %f%n", factf(6.0))
+        return
+    end
 
     array = push(array, 12)
     array = push(array, 14)

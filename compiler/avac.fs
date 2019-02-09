@@ -66,6 +66,7 @@ let main(args) =
             let script = new Script("testc.ava")
             if script.Initialize(data) then
                 let sw = Stopwatch.StartNew()
+                script.Call("__init__") |> ignore
                 script.Call("main") |> ignore
                 sw.Stop()
                 printfn "\n time: %.3fs\n memory: %.4fMB\n" (sw.Elapsed.TotalSeconds) (float(script.MemoryUsage) / 1000000.0)

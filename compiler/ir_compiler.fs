@@ -19,6 +19,7 @@ and Proc =
         Locals     : int
         EndLabel   : Label option
         IsExtern   : bool
+        IsExport   : bool
     }
 
 and Symbol =
@@ -57,6 +58,8 @@ and Instruction =
     | Cle of Operand * Operand * Operand
     | Cgt of Operand * Operand * Operand
     | Cge of Operand * Operand * Operand
+    | Cvtwf of Operand * Operand
+    | Cvtfw of Operand * Operand
     | IfFalse of Operand * Label
     | IfTrue of Operand * Label
     | PushParam of Operand
@@ -166,10 +169,10 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
         let mutable temp_index = 0
         let current_while_end_label = Stack<Label>()
 
-        let alloc_temp() =
+        let alloc_temp t =
             let id_ref = { Identifier = sprintf "%%R%i" temp_index }
             temp_index <- temp_index + 1
-            Var({ Name = id_ref; Type = scalar_type Int}) // @Todo: types
+            Var({ Name = id_ref; Type = t}) // @Todo: types
 
         let alloc_var id_ref =
             let parent_id =
@@ -196,12 +199,18 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
         let alloc_local() =
             locals <- locals + 1
 
+        let expr_type e =
+            match e with
+            | IdentifierExpression(id_ref) ->
+                semantics.SymbolTable.GetIdentifierType id_ref
+            | _ -> semantics.ExpressionTable.[e]
+
         let emit i = (body.Add i)
 
         let rec compile_binaryexpr =
             function
             | (lhs, Ast.CondOr, rhs) ->
-                let result = alloc_temp()
+                let result = alloc_temp (expr_type lhs)
                 printfn "%A" lhs
                 let a_false = alloc_label()
                 let end_label = alloc_label()
@@ -221,7 +230,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
 
                 result
             | (lhs, Ast.CondAnd, rhs) ->
-                let result = alloc_temp()
+                let result = alloc_temp (expr_type lhs)
                 let a_true = alloc_label()
                 let end_label = alloc_label()
 
@@ -242,13 +251,13 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             | (lhs, op, rhs) ->
                 let a = compile_expression lhs
                 let b = compile_expression rhs
-                compile_atomic_binexpr a op b
+                compile_atomic_binexpr a op b (expr_type lhs)
 
         and compile_unaryexpr =
             function
             | (Ast.LogicalNot, rhs) ->
                 let a = compile_expression rhs
-                let result = alloc_temp()
+                let result = alloc_temp (expr_type rhs)
                 let end_label = alloc_label()
 
                 emit(Copy(result, Const(0)))
@@ -259,12 +268,12 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 result
             | (op, rhs) ->
                 let a = compile_expression rhs
-                compile_atomic_uexpr op a
+                compile_atomic_uexpr op a (expr_type rhs)
 
         /// Atomic binary expressions can be handled with
         /// a single IR instruction
-        and compile_atomic_binexpr a op b =
-            let result = alloc_temp()
+        and compile_atomic_binexpr a op b t =
+            let result = alloc_temp t
 
             match op with
             | Ast.Add   -> emit(Add(result, a, b))
@@ -286,8 +295,8 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
 
             result
 
-        and compile_atomic_uexpr op a =
-            let result = alloc_temp()
+        and compile_atomic_uexpr op a t =
+            let result = alloc_temp t
 
             match op with
             | Ast.BitwiseNot -> emit(BitNot(result, a))
@@ -299,7 +308,6 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             result
 
         and compile_expression expr =
-            //let expr_type = semantics.ExpressionTable.[expr]
             let e = const_fold expr
 
             match e with
@@ -323,11 +331,20 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 a
             | ProcedureCallExpression(id_ref, args) ->
                 match id_ref.Identifier with
+                // Handle compile time procedures (macros)
+                | "float" ->
+                    let a = alloc_temp (scalar_type Float)
+                    emit(Cvtwf(a, compile_expression args.[0]))
+                    a
+                | "int" ->
+                    let a = alloc_temp (scalar_type Int)
+                    emit(Cvtfw(a, compile_expression args.[0]))
+                    a
                 | "free" ->
                     emit(Free(compile_expression args.[0]))
                     Nop
                 | "malloc" ->
-                    let a = alloc_temp()
+                    let a = alloc_temp (scalar_type Void)
                     emit(Malloc(a, compile_expression args.[0]))
                     a
                 | _ ->
@@ -338,7 +355,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                         emit(PushParam(compile_expression args.[i]))
 
                     // @Todo: return array type
-                    let a = alloc_temp()
+                    let a = alloc_temp (scalar_type semantics.ProcedureTable.[id_ref.Identifier].ReturnType)
 
                     if semantics.ProcedureTable.[id_ref.Identifier].IsExtern then
                         emit(CallExtern(a, id_ref.Identifier))
@@ -350,6 +367,8 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 match l with
                 | IntLiteral(i) ->
                     Const i
+                | FloatLiteral(i) ->
+                    Const(Asm.Encode.f32_to_int i)
                 | StringLiteral(s) ->
                     alloc_global None (Asm.Encode.i32_to_bytes s.Length) None // String capacity
                     alloc_global None (Asm.Encode.i32_to_bytes s.Length) None // String length
@@ -367,7 +386,8 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
                 let i = compile_expression e
                 //let offset = alloc_temp()
                 //emit(Add(offset, a, i)) // @Cleanup
-                let value = alloc_temp()
+                let array_type = semantics.SymbolTable.GetIdentifierType(id_ref)
+                let value = alloc_temp (scalar_type array_type.Type)
                 emit(ArrayLoad(value, a, i))
                 value
             | _ -> Nop
@@ -523,6 +543,7 @@ let compile (program: Program, semantics: SemanticAnalysisResult) =
             Locals     = locals
             EndLabel   = end_label
             IsExtern   = is_extern
+            IsExport   = flags = ProcFlags.PUBLIC
         }
 
     let procs = new List<Proc>()
@@ -574,6 +595,8 @@ let dump (ir: IR) =
         | Cgt(dst, op1, op2) -> sprintf "\t%s := %s > %s" (s dst) (s op1) (s op2)
         | Cle(dst, op1, op2) -> sprintf "\t%s := %s <= %s" (s dst) (s op1) (s op2)
         | Cge(dst, op1, op2) -> sprintf "\t%s := %s >=%s" (s dst) (s op1) (s op2)
+        | Cvtfw(dst, op) -> sprintf "\t%s := word(%s)" (s dst) (s op)
+        | Cvtwf(dst, op) -> sprintf "\t%s := float(%s)" (s dst) (s op)
         | BitAnd(dst, op1, op2) -> sprintf "\t%s := %s & %s" (s dst) (s op1) (s op2)
         | BitOr(dst, op1, op2) -> sprintf "\t%s := %s | %s" (s dst) (s op1) (s op2)
         | BitXor(dst, op1, op2) -> sprintf "\t%s := %s xor %s" (s dst) (s op1) (s op2)
@@ -581,7 +604,7 @@ let dump (ir: IR) =
         | BitNot(dst, op1) -> sprintf "\t%s := ~%s" (s dst) (s op1)
         | Copy(dst, op) -> sprintf "\t%s := %s" (s dst) (s op)
         | Call(dst, op) -> sprintf "\t%s := call %s" (s dst) op
-        | CallExtern(dst, s) -> sprintf "\t[NOT SUPPORTED]" // @Todo
+        | CallExtern(dst, op) -> sprintf "\t%s := calx %s" (s dst) op
         | Malloc(dst, op) -> sprintf "\t%s := malloc %s" (s dst) (s op)
         | Free(op) -> sprintf "\tfree %s" (s op)
         | LoadRef(dst, op) -> sprintf "\t%s := %s^" (s dst) (s op)

@@ -6,6 +6,7 @@ module Asm
 
 open System.Text
 open System.Collections.Generic
+open System
 
 let assembler_signature = ((int16 ':' <<< 8) ||| int16 '(')
 
@@ -28,6 +29,9 @@ module Encode =
     let i16_to_bytes (i: int16) =
         [ byte(i &&& 0xffs);
           byte((i &&& 0xff00s) >>> 8);]
+
+    let f32_to_int (f: float32) =
+        BitConverter.SingleToInt32Bits(f)
 
     let bytes_to_int (bytes: byte list) =
         let mutable res = int bytes.Head
