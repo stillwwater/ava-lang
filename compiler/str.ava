@@ -1,0 +1,12 @@
+#extern streq(a: str, b: str) -> int
+
+event main -> int do
+    i := 0
+
+    while i < 10000 do
+        b := streq("hello", "hallo")
+        i = i + 1
+    end
+
+    return 0
+end

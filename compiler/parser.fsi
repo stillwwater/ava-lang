@@ -50,6 +50,8 @@ type token =
   | COLON
   | SEMI_COLON
   | COMMA
+  | KW_EVENT
+  | KW_PROCEDURE
   | KW_TEXT
   | KW_STRING
   | KW_CHAR
@@ -112,6 +114,8 @@ type tokenId =
     | TOKEN_COLON
     | TOKEN_SEMI_COLON
     | TOKEN_COMMA
+    | TOKEN_KW_EVENT
+    | TOKEN_KW_PROCEDURE
     | TOKEN_KW_TEXT
     | TOKEN_KW_STRING
     | TOKEN_KW_CHAR
@@ -141,6 +145,7 @@ type nonTerminalId =
     | NONTERM_scalar_decl
     | NONTERM_array_decl
     | NONTERM_procedure_decl
+    | NONTERM_return_spec
     | NONTERM_parameters
     | NONTERM_parameter_list
     | NONTERM_parameter

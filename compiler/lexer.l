@@ -65,6 +65,8 @@ rule tokenstream =
     | "break"    { KW_BREAK }
     | "continue" { KW_CONTINUE }
     | "export"   { KW_EXPORT }
+    | "procedure"{ KW_PROCEDURE }
+    | "event"    { KW_EVENT }
     | "extern"   { DR_EXTERN }
     | "unchecked"{ DR_UNCHECKED }
     // Native procedures

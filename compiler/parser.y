@@ -32,6 +32,8 @@ let yyerror (msg: string) =
 %token KW_CHAR
 %token KW_STRING
 %token KW_TEXT
+%token KW_PROCEDURE
+%token KW_EVENT
 
 %token COMMA
 %token SEMI_COLON
@@ -208,30 +210,27 @@ array_decl: IDENT COLON LBRACKET RBRACKET KW_OF type_spec EOL
     { Ast.ArrayDecl(ArrayFlags.FIXED, idref $1, Some($4), Some($7), Some($9)) }
 
 // main :: (arg : type) -> type
-procedure_decl: IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, $4, $7, $8) }
+procedure_decl: IDENT parameters return_spec compound_stmt
+    { Ast.ProcedureDecl(ProcFlags.LOCAL, idref $1, $2, $3, $4) }
 
-    | IDENT DOUBLE_COLON LPAREN RPAREN RARROW type_spec compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, [], $6, $7) }
+    // Optional procedure keyword
+    | KW_PROCEDURE IDENT parameters return_spec compound_stmt
+    { Ast.ProcedureDecl(ProcFlags.LOCAL, idref $2, $3, $4, $5) }
 
-    | IDENT DOUBLE_COLON LPAREN parameters RPAREN compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, $4, Ast.Void, $6) }
+    // Event procedure (can be called from ava machine)
+    | KW_EVENT IDENT parameters return_spec compound_stmt
+    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $2, $3, $4, $5) }
 
-    | IDENT DOUBLE_COLON LPAREN RPAREN compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.PUBLIC, idref $1, [], Ast.Void, $5) }
+    | HASH DR_EXTERN IDENT parameters return_spec EOL
+    { Ast.ProcedureDecl(ProcFlags.EXTERN, idref $3, $4, $5, [Ast.Declaration(Ast.DeclNop)]) }
 
-    // export main :: (arg : type) -> type
-    // @Todo: KW_EXPORT can be applied to any declaration
-    // @Obsolete (use #local instead)
-    | KW_EXPORT IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec compound_stmt
-    { Ast.ProcedureDecl(ProcFlags.LOCAL, idref $2, $5, $8, $9) }
+return_spec: RARROW type_spec { $2 }
+    | /* empty */ { Ast.Void }
 
-    | HASH DR_EXTERN IDENT DOUBLE_COLON LPAREN parameters RPAREN RARROW type_spec EOL
-    { Ast.ProcedureDecl(ProcFlags.EXTERN, idref $3, $6, $9, [Ast.Declaration(Ast.DeclNop)]) }
-
-parameters: parameter_list  { $1 }
-    // @Todo: ommit void
-    | KW_VOID { [] }
+parameters: LPAREN parameter_list RPAREN { $2 }
+    | LPAREN KW_VOID RPAREN { [] }
+    | LPAREN RPAREN { [] }
+    | /* empty */ { [] }
 
 parameter_list: parameter_list COMMA parameter { $1 @ [$3] }
     | parameter { [$1] }
@@ -359,6 +358,8 @@ qualified: IDENT LBRACKET expr RBRACKET
     { Ast.ArrayIdentifierExpression(idref $1, $3) }
     | IDENT LPAREN arguments RPAREN
     { Ast.ProcedureCallExpression(idref $1, $3)}
+    | type_spec LPAREN arguments RPAREN
+    { Ast.ProcedureCallExpression(idref ($1.ToString()), $3)}
     // proc()
     | IDENT LPAREN RPAREN
     { Ast.ProcedureCallExpression(idref $1, [])}
